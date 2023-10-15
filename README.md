@@ -1,6 +1,8 @@
 # DeerHacks Back-end API
 
-## See Setup Video [Here](https://drive.google.com/file/d/1s-L1dwfkkaSeSEja4EYnT1HKaZZkaRQx/view?usp=sharing)
+## See Setup Video 
+
+**[Here](https://drive.google.com/file/d/1s-L1dwfkkaSeSEja4EYnT1HKaZZkaRQx/view?usp=sharing)**
 
 ## Resources mentioned in video
 - https://www.elephantsql.com/ (Choose PostgreSQL database)
