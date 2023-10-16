@@ -177,11 +177,11 @@ func Login(c *gin.Context) {
 	var user models.User
 	initializers.DB.First(&user, "discord_id = ?", userDetails.ID)
 
+	expiry := time.Now().Add(time.Duration(details.ExpiresIn) * time.Second)
+
 	// If user does not exist, create them and add them to discord
 
 	if user.ID == 0 {
-
-		expiry := time.Now().Add(time.Duration(details.ExpiresIn) * time.Second)
 
 		user = models.User{
 			DiscordId:    userDetails.ID,
@@ -206,6 +206,12 @@ func Login(c *gin.Context) {
 
 		AddToDiscord(&user)
 
+	} else {
+		// Update tokens and expiry date for existing user
+		user.AuthToken = details.AccessToken
+		user.RefreshToken = details.RefreshToken
+		user.TokenExpiry = expiry.Format(time.RFC3339)
+		initializers.DB.Save(&user)
 	}
 
 	// Generate a jwt token
