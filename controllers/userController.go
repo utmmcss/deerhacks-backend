@@ -50,9 +50,8 @@ func UpdateUser(c *gin.Context) {
 
 	user := userObj.(models.User)
 
-	// If user is not registering, they cannot update their information
-	// NOTE: If user pending (no email verification), they CANNOT update their information
-	if user.Status != models.Registering {
+	// If user is not registering or pending, they cannot update their information
+	if user.Status != models.Registering && user.Status != models.Pending {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "Not allowed to update information at this time",
 		})
@@ -77,6 +76,12 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
+	// Early return if body info is already in user to avoid unnecessary DB call
+	if user.Name == body.Name && user.Email == body.Email {
+		c.JSON(http.StatusOK, gin.H{})
+		return
+	}
+	
 	// Update the user object with the new information (if applicable)
 	if body.Name != "" {
 		user.Name = body.Name // Could be truncated to first n characters
@@ -85,7 +90,7 @@ func UpdateUser(c *gin.Context) {
 		user.Email = body.Email // Do we want to use mail.ParseAddress() to validate email?
 	}
 
-	// Maybe check if body info is already in user to avoid unnecessary DB calls?
+	// Save the updated user object to the database
 	if initializers.DB.Save(&user).Error != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update user",
