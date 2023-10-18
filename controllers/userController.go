@@ -82,21 +82,13 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	userData := UpdateUserBody{
-		Name: user.Name,
-		Email: user.Email,
-	}
-	// Early return if body info is already in user to avoid unnecessary DB call
-	if userData == bodyData {
-		c.JSON(http.StatusOK, gin.H{})
-		return
-	}
-	
+	var isUserChanged bool = false
 	// Update the user object with the new information (if applicable)
-	if bodyData.Name != userData.Name {
+	if bodyData.Name != user.Name {
 		user.Name = bodyData.Name
+		isUserChanged = true
 	}
-	if bodyData.Email != userData.Email {
+	if bodyData.Email != user.Email {
 		email, err := helpers.GetValidEmail(bodyData.Email)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -105,6 +97,12 @@ func UpdateUser(c *gin.Context) {
 			return
 		}
 		user.Email = email
+		isUserChanged = true
+	}
+
+	if(!isUserChanged) {
+		c.JSON(http.StatusOK, gin.H{})
+		return
 	}
 
 	// Save the updated user object to the database
