@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"github.com/utmmcss/deerhacks-backend/helpers"
 )
 
 func GetUser(c *gin.Context) {
@@ -41,7 +42,7 @@ func GetUser(c *gin.Context) {
 // If the update is successful, it returns a success response.
 func UpdateUser(c *gin.Context) {
 
-	var UpdateUserBody struct {
+	type UpdateUserBody struct {
 		Name  string `json:"name,omitempty"`
 		Email string `json:"email,omitempty"`
 	}
@@ -68,26 +69,42 @@ func UpdateUser(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-	body := UpdateUserBody
-	if json.Unmarshal(bodyObj, &body) != nil {
+
+	// Defaults to user values
+	bodyData := UpdateUserBody{
+		Name: user.Name,
+		Email: user.Email,
+	}
+	if json.Unmarshal(bodyObj, &bodyData) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid Request Body",
 		})
 		return
 	}
 
+	userData := UpdateUserBody{
+		Name: user.Name,
+		Email: user.Email,
+	}
 	// Early return if body info is already in user to avoid unnecessary DB call
-	if user.Name == body.Name && user.Email == body.Email {
+	if userData == bodyData {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
 	
 	// Update the user object with the new information (if applicable)
-	if body.Name != "" {
-		user.Name = body.Name // Could be truncated to first n characters
+	if bodyData.Name != userData.Name {
+		user.Name = bodyData.Name
 	}
-	if body.Email != "" {
-		user.Email = body.Email // Do we want to use mail.ParseAddress() to validate email?
+	if bodyData.Email != userData.Email {
+		email, err := helpers.GetValidEmail(bodyData.Email)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid Email Address",
+			})
+			return
+		}
+		user.Email = email
 	}
 
 	// Save the updated user object to the database
