@@ -100,7 +100,7 @@ func UpdateUser(c *gin.Context) {
 		isUserChanged = true
 	}
 
-	if(!isUserChanged) {
+	if !isUserChanged {
 		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
