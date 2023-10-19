@@ -8,9 +8,6 @@ type Application struct {
 	gorm.Model
 	DiscordId             string `gorm:"unique;size:128"`
 	IsDraft               bool
-	FirstName             string `gorm:"size:128"`
-	LastName              string `gorm:"size:128"`
-	Email                 string `gorm:"unique;size:128"`
 	PhoneNumber           string `gorm:"unique;size:128"`
 	IsSubscribed          bool
 	Age                   int
