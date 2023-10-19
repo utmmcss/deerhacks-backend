@@ -10,8 +10,8 @@ type User struct {
 	gorm.Model
 	DiscordId      string `gorm:"unique"`
 	Avatar         string
-	Name           string
-	Email          string `gorm:"unique"`
+	Name           string `gorm:"size:128"`
+	Email          string `gorm:"unique;size:128"`
 	Status         string `gorm:"default:pending"`
 	QRCode         string `gorm:"unique"`
 	InternalStatus string
