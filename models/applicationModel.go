@@ -32,14 +32,14 @@ type Application struct {
 	Github                string `gorm:"size:128"`
 	Linkedin              string `gorm:"size:128"`
 	ResumeConsent         bool
-	HackathonExperience   string `gorm:"size:1000"`
-	DeerhacksExperience   string `gorm:"size:1000"`
+	HackathonExperience   string `gorm:"size:1300"`
+	DeerhacksExperience   string `gorm:"size:1300"`
 	TeamPreference        string `gorm:"size:128"`
 	Interests             []string `gorm:"type:jsonb"`
-	DeerhacksPitch        string `gorm:"size:1000"`
-	SharedProject         string `gorm:"size:1000"`
-	FutureTech            string `gorm:"size:1000"`
-	DeerhacksReach        string `gorm:"size:1000"`
+	DeerhacksPitch        string `gorm:"size:1300"`
+	SharedProject         string `gorm:"size:1300"`
+	FutureTech            string `gorm:"size:1300"`
+	DeerhacksReach        string `gorm:"size:1300"`
 	mlhCodeAgreement      bool
 	mlhSubscribe          bool
 	mlhAuthorize          bool
