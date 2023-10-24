@@ -186,7 +186,7 @@ func Login(c *gin.Context) {
 		user = models.User{
 			DiscordId:    userDetails.ID,
 			Avatar:       userDetails.Avatar,
-			Name:         userDetails.Username,
+			Username:     userDetails.Username,
 			Email:        userDetails.Email,
 			QRCode:       uuid.New().String(),
 			AuthToken:    details.AccessToken,
@@ -207,10 +207,19 @@ func Login(c *gin.Context) {
 		AddToDiscord(&user)
 
 	} else {
-		// Update tokens and expiry date for existing user
+		// Update tokens, expiry date, Avatar, and Username for existing user
 		user.AuthToken = details.AccessToken
 		user.RefreshToken = details.RefreshToken
 		user.TokenExpiry = expiry.Format(time.RFC3339)
+
+		if user.Avatar != userDetails.Avatar {
+			user.Avatar = userDetails.Avatar
+		}
+
+		if user.Username != userDetails.Username {
+			user.Username = userDetails.Username
+		}
+
 		initializers.DB.Save(&user)
 	}
 
