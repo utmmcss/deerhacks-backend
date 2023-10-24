@@ -6,9 +6,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
-	"github.com/utmmcss/deerhacks-backend/helpers"
 )
 
 func GetUser(c *gin.Context) {
@@ -20,16 +20,14 @@ func GetUser(c *gin.Context) {
 	responseMap := make(map[string]interface{})
 
 	// Always include these fields
-	responseMap["name"] = user.Name
+	responseMap["first_name"] = user.FirstName
+	responseMap["last_name"] = user.LastName
+	responseMap["username"] = user.Username
 	responseMap["email"] = user.Email
 	responseMap["discord_id"] = user.DiscordId
 	responseMap["status"] = user.Status
 	responseMap["qr_code"] = user.QRCode
-
-	// Conditionally include the Avatar field
-	if user.Avatar != "" {
-		responseMap["avatar"] = user.Avatar
-	}
+	responseMap["avatar"] = user.Avatar
 
 	c.JSON(http.StatusOK, gin.H{
 		"user": responseMap,
@@ -43,8 +41,9 @@ func GetUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 
 	type UpdateUserBody struct {
-		Name  string `json:"name,omitempty"`
-		Email string `json:"email,omitempty"`
+		FirstName string `json:"first_name,omitempty"`
+		LastName  string `json:"last_name,omitempty"`
+		Email     string `json:"email,omitempty"`
 	}
 
 	userObj, _ := c.Get("user")
@@ -69,11 +68,11 @@ func UpdateUser(c *gin.Context) {
 	}
 	defer c.Request.Body.Close()
 
-
 	// Defaults to user values
 	bodyData := UpdateUserBody{
-		Name: user.Name,
-		Email: user.Email,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
 	}
 	if json.Unmarshal(bodyObj, &bodyData) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -84,10 +83,16 @@ func UpdateUser(c *gin.Context) {
 
 	var isUserChanged bool = false
 	// Update the user object with the new information (if applicable)
-	if bodyData.Name != user.Name {
-		user.Name = bodyData.Name
+	if bodyData.FirstName != user.FirstName {
+		user.FirstName = bodyData.FirstName
 		isUserChanged = true
 	}
+
+	if bodyData.LastName != user.LastName {
+		user.LastName = bodyData.LastName
+		isUserChanged = true
+	}
+
 	if bodyData.Email != user.Email {
 		email, err := helpers.GetValidEmail(bodyData.Email)
 		if err != nil {
@@ -112,6 +117,6 @@ func UpdateUser(c *gin.Context) {
 		})
 		return
 	}
-	
+
 	c.JSON(http.StatusOK, gin.H{})
 }
