@@ -7,10 +7,10 @@ import (
 type Application struct {
 	gorm.Model
 	DiscordId             string `gorm:"unique;size:128"`
-	IsDraft               bool
+	IsDraft               bool   `gorm:"default:true"`
 	PhoneNumber           string `gorm:"unique;size:128"`
 	IsSubscribed          bool
-	Age                   int
+	Age                   int    `gorm:"default:NULL"`
 	Gender                string `gorm:"size:128"`
 	Pronoun               string `gorm:"size:128"`
 	Ethnicity             string `gorm:"size:128"`
@@ -40,7 +40,7 @@ type Application struct {
 	SharedProject         string `gorm:"size:1300"`
 	FutureTech            string `gorm:"size:1300"`
 	DeerhacksReach        string `gorm:"size:1300"`
-	mlhCodeAgreement      bool
-	mlhSubscribe          bool
-	mlhAuthorize          bool
+	MlhCodeAgreement      bool
+	MlhSubscribe          bool
+	MlhAuthorize          bool
 }
