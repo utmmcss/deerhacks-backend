@@ -33,7 +33,7 @@ type Application struct {
 	Linkedin              string `gorm:"size:128"`
 	ResumeConsent         bool
 	HackathonExperience   string `gorm:"size:1300"`
-	DeerhacksExperience   string `gorm:"size:1300"`
+	DeerhacksExperience   bool
 	TeamPreference        string `gorm:"size:128"`
 	Interests             []string `gorm:"type:jsonb"`
 	DeerhacksPitch        string `gorm:"size:1300"`
