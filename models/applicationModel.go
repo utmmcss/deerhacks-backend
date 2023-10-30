@@ -38,7 +38,7 @@ type Application struct {
 	Program               string   `gorm:"size:128"`
 	ResumeLink            string   `gorm:"size:128"`
 	ResumeFilename        string   `gorm:"size:128"`
-	ResumeHash            string   `gorm:"size:128"`
+	ResumeHash            *string  `gorm:"size:128"`
 	Github                string   `gorm:"size:128"`
 	Linkedin              string   `gorm:"size:128"`
 	ResumeConsent         bool
