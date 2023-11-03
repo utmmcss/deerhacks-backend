@@ -36,7 +36,7 @@ func GetApplicaton(c *gin.Context) {
 	}
 
 	// Convert application to response
-	applicationResponse, _ := helpers.ToApplicationResponse(application)
+	applicationResponse := helpers.ToApplicationResponse(application)
 
 	c.JSON(http.StatusOK, applicationResponse)
 

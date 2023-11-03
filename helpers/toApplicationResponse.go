@@ -1,8 +1,6 @@
 package helpers
 
 import (
-	"io"
-	"net/http"
 
 	"github.com/utmmcss/deerhacks-backend/models"
 )
@@ -26,8 +24,6 @@ type InnerApplication struct {
 	Education             string           `json:"education"`
 	School                string           `json:"school"`
 	Program               string           `json:"program"`
-	ResumeBytes           []byte           `json:"resume_bytes"`
-	ResumeFilename        string           `json:"resume_filename"`
 	Github                string           `json:"github"`
 	Linkedin              string           `json:"linkedin"`
 	ResumeConsent         bool             `json:"resume_consent"`
@@ -49,11 +45,9 @@ type ApplicationResponse struct {
 	Application InnerApplication `json:"application"`
 }
 
-func ToApplicationResponse(application models.Application) (ApplicationResponse, error) {
+func ToApplicationResponse(application models.Application) ApplicationResponse {
 
-	var resumeByteData []byte = []byte{}
-
-	applicationResponse := ApplicationResponse{
+	return ApplicationResponse{
 		IsDraft: application.IsDraft,
 		Application: InnerApplication{
 			PhoneNumber:           application.PhoneNumber,
@@ -74,8 +68,6 @@ func ToApplicationResponse(application models.Application) (ApplicationResponse,
 			Education:             application.Education,
 			School:                application.School,
 			Program:               application.Program,
-			ResumeBytes:           resumeByteData,
-			ResumeFilename:        application.ResumeFilename,
 			Github:                application.Github,
 			Linkedin:              application.Linkedin,
 			ResumeConsent:         application.ResumeConsent,
@@ -92,24 +84,4 @@ func ToApplicationResponse(application models.Application) (ApplicationResponse,
 			MlhAuthorize:          application.MlhAuthorize,
 		},
 	}
-
-	// Make an HTTP GET request to the URL, if URL is not reachable resumeByteData is empty
-	// If the URL is not reachable ResumeBytes is sent as ""
-	if application.ResumeLink != "" {
-		res, err := http.Get(application.ResumeLink)
-		if err != nil {
-			return applicationResponse, err
-		} else {
-			// Read the response body into a byte slice, We should prob put a limit on this...
-			resumeByteData, err = io.ReadAll(res.Body)
-			if err != nil {
-				return applicationResponse, err
-			}
-		}
-		defer res.Body.Close()
-	}
-
-	// Add resume byte data to application response
-	applicationResponse.Application.ResumeBytes = resumeByteData
-	return applicationResponse, nil
 }
