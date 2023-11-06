@@ -20,6 +20,7 @@ func main() {
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
+	r.POST("/admin-user-update", middleware.RequireAuth, controllers.UpdateAdmin)
 
 	r.Run()
 
