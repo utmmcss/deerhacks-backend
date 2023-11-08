@@ -242,8 +242,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Send it back
-	c.SetSameSite(http.SameSiteLaxMode)
-	// TODO change false to true when publishing
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", true, true)
 	c.JSON(http.StatusOK, gin.H{})
 }
