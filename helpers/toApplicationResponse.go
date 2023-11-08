@@ -1,7 +1,6 @@
 package helpers
 
 import (
-
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
@@ -20,6 +19,11 @@ type InnerApplication struct {
 	EmergencyRelationship string           `json:"emergency_relationship"`
 	ShirtSize             models.ShirtSize `json:"shirt_size"`
 	DietRestriction       []string         `json:"diet_restriction"`
+	Day1Dinner            bool             `json:"day1_dinner"`
+	Day2Breakfast         bool             `json:"day2_breakfast"`
+	Day2Lunch             bool             `json:"day2_lunch"`
+	Day2Dinner            bool             `json:"day2_dinner"`
+	Day3Breakfast         bool             `json:"day3_breakfast"`
 	AdditionalInfo        string           `json:"additional_info"`
 	Education             string           `json:"education"`
 	School                string           `json:"school"`
@@ -64,6 +68,11 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			EmergencyRelationship: application.EmergencyRelationship,
 			ShirtSize:             application.ShirtSize,
 			DietRestriction:       application.DietRestriction,
+			Day1Dinner:            application.Day1Dinner,
+			Day2Breakfast:         application.Day2Breakfast,
+			Day2Lunch:             application.Day2Lunch,
+			Day2Dinner:            application.Day2Dinner,
+			Day3Breakfast:         application.Day3Breakfast,
 			AdditionalInfo:        application.AdditionalInfo,
 			Education:             application.Education,
 			School:                application.School,
