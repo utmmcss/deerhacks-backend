@@ -103,6 +103,9 @@ func UpdateUser(c *gin.Context) {
 			return
 		}
 		user.Email = email
+		if user.Status == models.Registering {
+			user.Status = models.Pending
+		}
 		isUserChanged = true
 	}
 
