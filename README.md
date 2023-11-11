@@ -29,4 +29,5 @@ BOT_TOKEN = ""
 REDIRECT_URI = ""
 
 GUILD_ID = "967161405017055342"
+APP_ENV = "development"
 ```
