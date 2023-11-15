@@ -170,7 +170,7 @@ func UpdateAdmin(c *gin.Context) {
 	var currUser models.User
 	for _, u := range userBatch {
 		initializers.DB.First(&currUser, "discord_id = ?", u.DiscordID)
-		if currUser.Status != models.Admin && currUser.Status != models.Moderator {
+		if (user.Status == models.Moderator && currUser.Status != models.Admin && currUser.Status != models.Moderator) || user.Status == models.Admin {
 			bodyData := UpdateBody{
 				FirstName:      currUser.FirstName,
 				LastName:       currUser.LastName,
@@ -183,15 +183,15 @@ func UpdateAdmin(c *gin.Context) {
 			if jsonData, err := json.Marshal(u.Fields); err == nil {
 				if err := json.Unmarshal(jsonData, &bodyData); err != nil {
 					// Handle error from unmarshaling
-					c.JSON(http.StatusBadRequest, gin.H{
-						"error": "Failed to update bodyData",
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"error": "An Internal Error Occured",
 					})
 					return
 				}
 			} else {
 				// Handle error from marshaling
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error": "Failed to marshal u.Fields",
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "An Internal Error Occured",
 				})
 				return
 			}
@@ -233,7 +233,7 @@ func UpdateAdmin(c *gin.Context) {
 				return
 			}
 		}
-		//Clears currUser in preperation for new user info
+		//Clears currUser in preperation for next user info
 		currUser = models.User{}
 	}
 
