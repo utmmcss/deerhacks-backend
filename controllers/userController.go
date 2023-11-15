@@ -159,13 +159,13 @@ func GetUserList(c *gin.Context) {
 
 			// Include fields from the User struct
 			// userResponse["id"] = userApp.ID
+			userResponse["first_name"] = userApp.FirstName
+			userResponse["last_name"] = userApp.LastName
 			userResponse["username"] = userApp.Username
-			userResponse["avatar"] = userApp.Avatar
 			userResponse["email"] = userApp.Email
 			userResponse["verified"] = userApp.Status
 
 			// Include fields from the Application struct
-			userResponse["age"] = userApp.Age
 			userResponse["country"] = userApp.Country
 			// Add other application fields as needed
 
@@ -177,11 +177,12 @@ func GetUserList(c *gin.Context) {
 		initializers.DB.Find(&users)
 		for _, user := range users {
 			userResponse := make(map[string]interface{})
-			userResponse["id"] = user.ID
+			userResponse["first_name"] = user.FirstName
+			userResponse["last_name"] = user.LastName
 			userResponse["username"] = user.Username
-			userResponse["avatar"] = user.Avatar
 			userResponse["email"] = user.Email
-			userResponse["status"] = user.Status
+			userResponse["verified"] = user.Status
+
 			// Include other fields as needed
 			usersResponse = append(usersResponse, userResponse)
 		}
