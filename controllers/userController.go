@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"reflect"
@@ -183,16 +184,12 @@ func UpdateAdmin(c *gin.Context) {
 			if jsonData, err := json.Marshal(u.Fields); err == nil {
 				if err := json.Unmarshal(jsonData, &bodyData); err != nil {
 					// Handle error from unmarshaling
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"error": "An Internal Error Occured",
-					})
+					fmt.Println(err)
 					return
 				}
 			} else {
 				// Handle error from marshaling
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"error": "An Internal Error Occured",
-				})
+				fmt.Println(err)
 				return
 			}
 			// Update the user object with the new information (if applicable)
