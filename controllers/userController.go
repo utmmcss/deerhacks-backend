@@ -120,3 +120,75 @@ func UpdateUser(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{})
 }
+
+func GetUserList(c *gin.Context) {
+
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
+
+	if user.Status != models.Admin && user.Status != models.Moderator {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Not allowed to view user list",
+		})
+		return
+	}
+
+	// Check for the 'full' query parameter
+	full := c.DefaultQuery("full", "false")
+
+	// Create a slice to hold the response for each user
+	var usersResponse []map[string]interface{}
+
+	if full == "true" {
+		// Define a struct to hold the joined data from the user and application tables
+		type UserApplication struct {
+			models.User
+			models.Application
+		}
+
+		var userApplications []UserApplication
+		// Perform a join with the application table and select all fields
+		initializers.DB.Table("users").
+			Select("users.*, applications.*").
+			Joins("left join applications on applications.discord_id = users.discord_id").
+			Scan(&userApplications)
+
+		// Iterate over the results to construct the response
+		for _, userApp := range userApplications {
+			userResponse := make(map[string]interface{})
+
+			// Include fields from the User struct
+			// userResponse["id"] = userApp.ID
+			userResponse["username"] = userApp.Username
+			userResponse["avatar"] = userApp.Avatar
+			userResponse["email"] = userApp.Email
+			userResponse["verified"] = userApp.Status
+
+			// Include fields from the Application struct
+			userResponse["age"] = userApp.Age
+			userResponse["country"] = userApp.Country
+			// Add other application fields as needed
+
+			usersResponse = append(usersResponse, userResponse)
+		}
+	} else {
+		// If full=false, just return the basic user info without joining with the application table
+		var users []models.User
+		initializers.DB.Find(&users)
+		for _, user := range users {
+			userResponse := make(map[string]interface{})
+			userResponse["id"] = user.ID
+			userResponse["username"] = user.Username
+			userResponse["avatar"] = user.Avatar
+			userResponse["email"] = user.Email
+			userResponse["status"] = user.Status
+			// Include other fields as needed
+			usersResponse = append(usersResponse, userResponse)
+		}
+	}
+
+	// Send the response
+	c.JSON(http.StatusOK, gin.H{
+		"users": usersResponse,
+	})
+}

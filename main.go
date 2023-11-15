@@ -21,6 +21,7 @@ func main() {
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
 
+	r.GET("/user-list", middleware.RequireAuth, controllers.GetUserList)
 	r.Run()
 
 	// r.ForwardedByClientIP = true
