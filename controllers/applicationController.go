@@ -13,13 +13,23 @@ import (
 func GetApplicaton(c *gin.Context) {
 
 	userObj, _ := c.Get("user")
-	userDiscordId := userObj.(models.User).DiscordId
+	user := userObj.(models.User)
+
+	userDiscordId := user.DiscordId
 
 	var application models.Application
 	initializers.DB.First(&application, "discord_id = ?", userDiscordId)
+	
 
 	// If application does not exist, create it and add application to DB
 	if application.ID == 0 {
+
+		if user.Status != models.Registering {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "User is not allowed to create a new application at this time",
+			})
+			return
+		}
 
 		application = models.Application{
 			DiscordId: userDiscordId,
