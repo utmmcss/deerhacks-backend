@@ -77,8 +77,7 @@ func UpdateAdmin(c *gin.Context) {
 					c.JSON(http.StatusInternalServerError, gin.H{
 						"error": "An Internal Error Occured",
 					})
-					errorMsg := fmt.Errorf("Failed to unmarshal u.Fields for user %d ", currUser.ID)
-					fmt.Println(errorMsg)
+					fmt.Errorf("Failed to unmarshal u.Fields for user %d ", currUser.ID)
 					return
 				}
 			} else {
@@ -86,8 +85,7 @@ func UpdateAdmin(c *gin.Context) {
 				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "An Internal Error Occured",
 				})
-				errorMsg := fmt.Errorf("Failed to marshal u.Fields for user %d ", currUser.ID)
-				fmt.Println(errorMsg)
+				fmt.Errorf("Failed to marshal u.Fields for user %d ", currUser.ID)
 				return
 			}
 			// Update the user object with the new information (if applicable)
