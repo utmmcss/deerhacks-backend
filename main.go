@@ -1,6 +1,9 @@
 package main
 
 import (
+	"os"
+
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/controllers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
@@ -16,6 +19,15 @@ func init() {
 
 func main() {
 	r := gin.Default()
+	appEnv := os.Getenv("APP_ENV")
+
+	config := cors.DefaultConfig()
+	config.AllowCredentials = true
+	config.AllowOrigins = []string{"https://deerhacks.ca", "https://2024.deerhacks.ca"}
+	if appEnv == "development" {
+		config.AllowOrigins = []string{"http://localhost:3000"}
+	}
+	r.Use(cors.New(config))
 
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
