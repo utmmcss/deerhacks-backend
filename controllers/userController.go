@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
@@ -118,8 +117,8 @@ func UpdateUser(c *gin.Context) {
 	err = initializers.DB.Save(&user).Error
 	if err != nil {
 
-		if (strings.Contains(err.Error(), "SQLSTATE 23505")) {
-			c.JSON(http.StatusConflict, gin.H {
+		if helpers.IsUniqueViolationError(err) {
+			c.JSON(http.StatusConflict, gin.H{
 				"error": "Email already in use",
 			})
 			return
