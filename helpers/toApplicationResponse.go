@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"github.com/jackc/pgtype"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
@@ -18,7 +19,7 @@ type InnerApplication struct {
 	EmergencyNumber       string           `json:"emergency_number"`
 	EmergencyRelationship string           `json:"emergency_relationship"`
 	ShirtSize             models.ShirtSize `json:"shirt_size"`
-	DietRestriction       []string         `json:"diet_restriction"`
+	DietRestriction       pgtype.JSONB        `json:"diet_restriction"`
 	Day1Dinner            bool             `json:"day1_dinner"`
 	Day2Breakfast         bool             `json:"day2_breakfast"`
 	Day2Lunch             bool             `json:"day2_lunch"`
@@ -34,7 +35,7 @@ type InnerApplication struct {
 	HackathonExperience   string           `json:"hackathon_experience"`
 	DeerhacksExperience   bool             `json:"deerhacks_experience"`
 	TeamPreference        string           `json:"team_preference"`
-	Interests             []string         `json:"interests"`
+	Interests             pgtype.JSONB        `json:"interests"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch"`
 	SharedProject         string           `json:"shared_project"`
 	FutureTech            string           `json:"future_tech"`

@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/jackc/pgtype"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +32,7 @@ type Application struct {
 	EmergencyNumber       string `gorm:"size:128"`
 	EmergencyRelationship string `gorm:"size:128"`
 	ShirtSize             ShirtSize
-	DietRestriction       []string `gorm:"type:jsonb"`
+	DietRestriction       pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
 	Day1Dinner            bool
 	Day2Breakfast         bool
 	Day2Lunch             bool
@@ -49,12 +50,12 @@ type Application struct {
 	ResumeConsent         bool
 	HackathonExperience   string `gorm:"size:1300"`
 	DeerhacksExperience   bool
-	TeamPreference        string   `gorm:"size:128"`
-	Interests             []string `gorm:"type:jsonb"`
-	DeerhacksPitch        string   `gorm:"size:1300"`
-	SharedProject         string   `gorm:"size:1300"`
-	FutureTech            string   `gorm:"size:1300"`
-	DeerhacksReach        string   `gorm:"size:1300"`
+	TeamPreference        string       `gorm:"size:128"`
+	Interests             pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
+	DeerhacksPitch        string       `gorm:"size:1300"`
+	SharedProject         string       `gorm:"size:1300"`
+	FutureTech            string       `gorm:"size:1300"`
+	DeerhacksReach        string       `gorm:"size:1300"`
 	MlhCodeAgreement      bool
 	MlhSubscribe          bool
 	MlhAuthorize          bool
