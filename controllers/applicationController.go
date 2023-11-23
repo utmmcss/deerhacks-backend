@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/jinzhu/copier"
 
@@ -78,6 +79,14 @@ func UpdateApplication(c *gin.Context) {
 	if (user.Status != models.Registering || !application.IsDraft) && user.Status != models.Admin {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "User is not allowed to update application at this time",
+		})
+		return
+	}
+
+	// If application is sumbitted after 1704085200 (2024-01-01 00:00:00 EST), return error
+	if time.Now().Unix() > 1704085200 {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Applications are now closed",
 		})
 		return
 	}
