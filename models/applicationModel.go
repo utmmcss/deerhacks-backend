@@ -49,8 +49,8 @@ type Application struct {
 	Github                string  `gorm:"size:128"`
 	Linkedin              string  `gorm:"size:128"`
 	ResumeConsent         bool
-	HackathonExperience   string `gorm:"size:128"`
-	DeerhacksExperience   bool
+	HackathonExperience   string       `gorm:"size:128"`
+	DeerhacksExperience   string       `gorm:"size:128"`
 	TeamPreference        string       `gorm:"size:128"`
 	Interests             pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
 	DeerhacksPitch        string       `gorm:"size:1500"`

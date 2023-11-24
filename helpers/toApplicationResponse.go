@@ -34,7 +34,7 @@ type InnerApplication struct {
 	Linkedin              string           `json:"linkedin"`
 	ResumeConsent         bool             `json:"resume_consent"`
 	HackathonExperience   string           `json:"hackathon_experience"`
-	DeerhacksExperience   bool             `json:"deerhacks_experience"`
+	DeerhacksExperience   string           `json:"deerhacks_experience"`
 	TeamPreference        string           `json:"team_preference"`
 	Interests             pgtype.JSONB     `json:"interests"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch"`

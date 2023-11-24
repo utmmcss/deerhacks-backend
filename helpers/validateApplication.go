@@ -64,6 +64,9 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if !application.ResumeConsent {
 		return false, "Resume consent is required"
 	}
+	if application.DeerhacksExperience == "" {
+		return false, "Deerhacks experience is required"
+	}
 	if application.HackathonExperience == "" {
 		return false, "Hackathon experience is required"
 	}

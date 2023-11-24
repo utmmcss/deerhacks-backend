@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jinzhu/copier"
+	"gorm.io/gorm"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
@@ -113,7 +114,7 @@ func UpdateApplication(c *gin.Context) {
 
 	// If application is unchanged, return
 	if reflect.DeepEqual(bodyData, helpers.ToApplicationResponse(application)) {
-		c.Status(http.StatusOK)
+		c.JSON(http.StatusOK, gin.H{})
 		return
 	}
 
@@ -135,6 +136,26 @@ func UpdateApplication(c *gin.Context) {
 			})
 			return
 		}
+
+		// Save the updated user and application object to the database
+		user.Status = models.Applied
+		initializers.DB.Transaction(func(tx *gorm.DB) error {
+			if err := tx.Save(&user).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to update user/application",
+				})
+				return err
+			}
+			if err := tx.Save(&application).Error; err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{
+					"error": "Failed to update user/application",
+				})
+				return err
+			}
+			c.JSON(http.StatusOK, gin.H{})
+			return nil
+		})
+		return
 	}
 
 	// Save the updated application object to the database
@@ -145,5 +166,5 @@ func UpdateApplication(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusOK)
+	c.JSON(http.StatusOK, gin.H{})
 }
