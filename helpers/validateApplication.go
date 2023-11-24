@@ -27,9 +27,6 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if application.City == "" {
 		return false, "City is required"
 	}
-	if application.Province == "" {
-		return false, "Province is required"
-	}
 	if application.EmergencyName == "" {
 		return false, "Emergency contact name is required"
 	}
@@ -64,6 +61,9 @@ func ValidateApplication(application models.Application) (bool, string) {
 	// if application.ResumeHash == nil {
 	// 	return false, "Resume hash is required"
 	// }
+	if !application.ResumeConsent {
+		return false, "Resume consent is required"
+	}
 	if application.HackathonExperience == "" {
 		return false, "Hackathon experience is required"
 	}
@@ -87,6 +87,9 @@ func ValidateApplication(application models.Application) (bool, string) {
 	}
 	if !application.MlhCodeAgreement {
 		return false, "MLH code agreement is required"
+	}
+	if !application.MlhAuthorize {
+		return false, "MLH authorization is required"
 	}
 	return true, ""
 }

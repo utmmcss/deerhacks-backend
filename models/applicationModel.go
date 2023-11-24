@@ -45,17 +45,18 @@ type Application struct {
 	ResumeLink            string  `gorm:"size:128"`
 	ResumeFilename        string  `gorm:"size:128"`
 	ResumeHash            *string `gorm:"size:128"`
+	Portfolio             string  `gorm:"size:128"`
 	Github                string  `gorm:"size:128"`
 	Linkedin              string  `gorm:"size:128"`
 	ResumeConsent         bool
-	HackathonExperience   string `gorm:"size:1300"`
+	HackathonExperience   string `gorm:"size:128"`
 	DeerhacksExperience   bool
 	TeamPreference        string       `gorm:"size:128"`
 	Interests             pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
-	DeerhacksPitch        string       `gorm:"size:1300"`
-	SharedProject         string       `gorm:"size:1300"`
-	FutureTech            string       `gorm:"size:1300"`
-	DeerhacksReach        string       `gorm:"size:1300"`
+	DeerhacksPitch        string       `gorm:"size:1500"`
+	SharedProject         string       `gorm:"size:1500"`
+	FutureTech            string       `gorm:"size:1500"`
+	DeerhacksReach        string       `gorm:"size:1500"`
 	MlhCodeAgreement      bool
 	MlhSubscribe          bool
 	MlhAuthorize          bool

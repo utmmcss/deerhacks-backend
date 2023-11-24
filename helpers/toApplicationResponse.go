@@ -19,7 +19,7 @@ type InnerApplication struct {
 	EmergencyNumber       string           `json:"emergency_number"`
 	EmergencyRelationship string           `json:"emergency_relationship"`
 	ShirtSize             models.ShirtSize `json:"shirt_size"`
-	DietRestriction       pgtype.JSONB        `json:"diet_restriction"`
+	DietRestriction       pgtype.JSONB     `json:"diet_restriction"`
 	Day1Dinner            bool             `json:"day1_dinner"`
 	Day2Breakfast         bool             `json:"day2_breakfast"`
 	Day2Lunch             bool             `json:"day2_lunch"`
@@ -29,13 +29,14 @@ type InnerApplication struct {
 	Education             string           `json:"education"`
 	School                string           `json:"school"`
 	Program               string           `json:"program"`
+	Portfolio             string           `json:"portfolio"`
 	Github                string           `json:"github"`
 	Linkedin              string           `json:"linkedin"`
 	ResumeConsent         bool             `json:"resume_consent"`
 	HackathonExperience   string           `json:"hackathon_experience"`
 	DeerhacksExperience   bool             `json:"deerhacks_experience"`
 	TeamPreference        string           `json:"team_preference"`
-	Interests             pgtype.JSONB        `json:"interests"`
+	Interests             pgtype.JSONB     `json:"interests"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch"`
 	SharedProject         string           `json:"shared_project"`
 	FutureTech            string           `json:"future_tech"`
@@ -78,6 +79,7 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			Education:             application.Education,
 			School:                application.School,
 			Program:               application.Program,
+			Portfolio:             application.Portfolio,
 			Github:                application.Github,
 			Linkedin:              application.Linkedin,
 			ResumeConsent:         application.ResumeConsent,
