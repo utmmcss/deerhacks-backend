@@ -32,7 +32,7 @@ func main() {
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
-	
+	r.POST("/qr-check-in", middleware.RequireAuth, controllers.AdminQRCheckIn)
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
 
 	r.Run()

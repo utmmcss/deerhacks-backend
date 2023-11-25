@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -131,4 +132,104 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{})
+}
+
+func AdminQRCheckIn(c *gin.Context) {
+
+	type QRCheckInContext string
+
+	const (
+		REGISTRATION    QRCheckInContext = "registration"
+		DAY_1_DINNER    QRCheckInContext = "day_1_dinner"
+		DAY_2_BREAKFAST QRCheckInContext = "day_2_breakfast"
+		DAY_2_LUNCH     QRCheckInContext = "day_2_lunch"
+		DAY_2_DINNER    QRCheckInContext = "day_2_dinner"
+		DAY_3_BREAKFAST QRCheckInContext = "day_3_breakfast"
+	)
+
+	type QRCheckIn struct {
+		QRid    string           `json:"qrId"`
+		Context QRCheckInContext `json:"context"`
+	}
+
+	userObj, _ := c.Get("user")
+
+	user := userObj.(models.User)
+
+	if user.Status != models.Admin && user.Status != models.Moderator && user.Status != models.Volunteer {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Admin, moderator, or volunteer only",
+		})
+		return
+	}
+
+	bodyObj, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid Request Body",
+		})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	var bodyData QRCheckIn
+
+	if json.Unmarshal(bodyObj, &bodyData) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid Request Body",
+		})
+		return
+	}
+
+	//Get the user scanning in
+	var scannedUser models.User
+	initializers.DB.First(&scannedUser, "qr_code = ?", bodyData.QRid)
+
+	if scannedUser.Status == models.Admin {
+		// Return success if scanning in admins
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+		})
+	} else if bodyData.Context != REGISTRATION {
+		// Scanning in for food contexts
+
+	} else if user.Status == models.Admin || user.Status == models.Moderator {
+		// Scanning in for registration
+		if scannedUser.Status == models.Accepted {
+			scannedUser.Status = models.Attended
+		} else if scannedUser.Status == models.Accepted || scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer {
+			c.JSON(http.StatusOK, gin.H{
+				"success": true,
+				"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("%s could not be checked in: Status is not valid for checkin", scannedUser.Username),
+			})
+			return
+		}
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("%s could not be checked in: Volunteers are not authorized to scan in for registration contexts", scannedUser.Username),
+		})
+		return
+	}
+
+	err = initializers.DB.Save(&scannedUser).Error
+	if err != nil {
+
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update user",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+	})
+
 }
