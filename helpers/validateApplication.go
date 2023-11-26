@@ -1,9 +1,18 @@
 package helpers
 
 import (
+
 	"github.com/jackc/pgtype"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
+
+func isListEmpty(list pgtype.JSONB) bool {
+
+	var strList = []string{}
+	list.AssignTo(&strList)
+
+	return len(strList) == 0
+}
 
 func ValidateApplication(application models.Application) (bool, string) {
 	if application.PhoneNumber == "" || len(application.PhoneNumber) < 10 {
@@ -18,7 +27,7 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if application.Pronoun == "" {
 		return false, "Pronoun is required"
 	}
-	if application.Ethnicity == "" {
+	if isListEmpty(application.Ethnicity) {
 		return false, "Ethnicity is required"
 	}
 	if application.Country == "" {
@@ -39,7 +48,7 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if application.ShirtSize == "" {
 		return false, "Shirt size is required"
 	}
-	if application.DietRestriction.Status != pgtype.Present {
+	if isListEmpty(application.DietRestriction) {
 		return false, "Diet restrictions field missing"
 	}
 	if application.Education == "" {
@@ -64,7 +73,7 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if !application.ResumeConsent {
 		return false, "Resume consent is required"
 	}
-	if application.DeerhacksExperience == "" {
+	if isListEmpty(application.DeerhacksExperience) {
 		return false, "Deerhacks experience is required"
 	}
 	if application.HackathonExperience == "" {
@@ -73,7 +82,7 @@ func ValidateApplication(application models.Application) (bool, string) {
 	if application.TeamPreference == "" {
 		return false, "Team preference is required"
 	}
-	if application.Interests.Status != pgtype.Present {
+	if isListEmpty(application.Interests) {
 		return false, "Interests field missing"
 	}
 	if application.DeerhacksPitch == "" {

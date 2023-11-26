@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"github.com/jackc/pgtype"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
@@ -11,7 +10,7 @@ type InnerApplication struct {
 	Age                   int              `json:"age"`
 	Gender                string           `json:"gender"`
 	Pronoun               string           `json:"pronoun"`
-	Ethnicity             string           `json:"ethnicity"`
+	Ethnicity             []string         `json:"ethnicity"`
 	Country               string           `json:"country"`
 	City                  string           `json:"city"`
 	Province              string           `json:"province"`
@@ -19,7 +18,7 @@ type InnerApplication struct {
 	EmergencyNumber       string           `json:"emergency_number"`
 	EmergencyRelationship string           `json:"emergency_relationship"`
 	ShirtSize             models.ShirtSize `json:"shirt_size"`
-	DietRestriction       pgtype.JSONB     `json:"diet_restriction"`
+	DietRestriction       []string         `json:"diet_restriction"`
 	Day1Dinner            bool             `json:"day1_dinner"`
 	Day2Breakfast         bool             `json:"day2_breakfast"`
 	Day2Lunch             bool             `json:"day2_lunch"`
@@ -34,9 +33,9 @@ type InnerApplication struct {
 	Linkedin              string           `json:"linkedin"`
 	ResumeConsent         bool             `json:"resume_consent"`
 	HackathonExperience   string           `json:"hackathon_experience"`
-	DeerhacksExperience   string           `json:"deerhacks_experience"`
+	DeerhacksExperience   []string         `json:"deerhacks_experience"`
 	TeamPreference        string           `json:"team_preference"`
-	Interests             pgtype.JSONB     `json:"interests"`
+	Interests             []string         `json:"interests"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch"`
 	SharedProject         string           `json:"shared_project"`
 	FutureTech            string           `json:"future_tech"`
@@ -53,6 +52,16 @@ type ApplicationResponse struct {
 
 func ToApplicationResponse(application models.Application) ApplicationResponse {
 
+	var ethnicity = []string{}
+	var dietRestriction = []string{}
+	var deerhacksExperience = []string{}
+	var interests = []string{}
+
+	application.Ethnicity.AssignTo(&ethnicity)
+	application.DietRestriction.AssignTo(&dietRestriction)
+	application.DeerhacksExperience.AssignTo(&deerhacksExperience)
+	application.Interests.AssignTo(&interests)
+
 	return ApplicationResponse{
 		IsDraft: application.IsDraft,
 		Application: InnerApplication{
@@ -61,7 +70,7 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			Age:                   application.Age,
 			Gender:                application.Gender,
 			Pronoun:               application.Pronoun,
-			Ethnicity:             application.Ethnicity,
+			Ethnicity:             ethnicity,
 			Country:               application.Country,
 			City:                  application.City,
 			Province:              application.Province,
@@ -69,7 +78,7 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			EmergencyNumber:       application.EmergencyNumber,
 			EmergencyRelationship: application.EmergencyRelationship,
 			ShirtSize:             application.ShirtSize,
-			DietRestriction:       application.DietRestriction,
+			DietRestriction:       dietRestriction,
 			Day1Dinner:            application.Day1Dinner,
 			Day2Breakfast:         application.Day2Breakfast,
 			Day2Lunch:             application.Day2Lunch,
@@ -84,9 +93,9 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			Linkedin:              application.Linkedin,
 			ResumeConsent:         application.ResumeConsent,
 			HackathonExperience:   application.HackathonExperience,
-			DeerhacksExperience:   application.DeerhacksExperience,
+			DeerhacksExperience:   deerhacksExperience,
 			TeamPreference:        application.TeamPreference,
-			Interests:             application.Interests,
+			Interests:             interests,
 			DeerhacksPitch:        application.DeerhacksPitch,
 			SharedProject:         application.SharedProject,
 			FutureTech:            application.FutureTech,

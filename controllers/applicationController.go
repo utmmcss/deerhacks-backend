@@ -8,13 +8,12 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/jinzhu/copier"
-	"gorm.io/gorm"
-
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/copier"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"gorm.io/gorm"
 )
 
 func GetApplicaton(c *gin.Context) {
@@ -119,7 +118,13 @@ func UpdateApplication(c *gin.Context) {
 	}
 
 	// Update the application object with the new information (if applicable)
+	// Manually set pgtype.JSONB fields due to type mismatch
 	application.IsDraft = bodyData.IsDraft
+	application.Ethnicity.Set(bodyData.Application.Ethnicity)
+	application.DietRestriction.Set(bodyData.Application.DietRestriction)
+	application.DeerhacksExperience.Set(bodyData.Application.DeerhacksExperience)
+	application.Interests.Set(bodyData.Application.Interests)
+
 	if copier.Copy(&application, &(bodyData.Application)) != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update application",

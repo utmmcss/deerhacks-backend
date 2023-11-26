@@ -22,15 +22,15 @@ type Application struct {
 	PhoneNumber           string `gorm:"size:128"`
 	IsSubscribed          bool
 	Age                   int
-	Gender                string `gorm:"size:128"`
-	Pronoun               string `gorm:"size:128"`
-	Ethnicity             string `gorm:"size:128"`
-	Country               string `gorm:"size:128"`
-	City                  string `gorm:"size:128"`
-	Province              string `gorm:"size:128"`
-	EmergencyName         string `gorm:"size:128"`
-	EmergencyNumber       string `gorm:"size:128"`
-	EmergencyRelationship string `gorm:"size:128"`
+	Gender                string       `gorm:"size:128"`
+	Pronoun               string       `gorm:"size:128"`
+	Ethnicity             pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
+	Country               string       `gorm:"size:128"`
+	City                  string       `gorm:"size:128"`
+	Province              string       `gorm:"size:128"`
+	EmergencyName         string       `gorm:"size:128"`
+	EmergencyNumber       string       `gorm:"size:128"`
+	EmergencyRelationship string       `gorm:"size:128"`
 	ShirtSize             ShirtSize
 	DietRestriction       pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
 	Day1Dinner            bool
@@ -50,7 +50,7 @@ type Application struct {
 	Linkedin              string  `gorm:"size:128"`
 	ResumeConsent         bool
 	HackathonExperience   string       `gorm:"size:128"`
-	DeerhacksExperience   string       `gorm:"size:128"`
+	DeerhacksExperience   pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
 	TeamPreference        string       `gorm:"size:128"`
 	Interests             pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
 	DeerhacksPitch        string       `gorm:"size:1500"`
