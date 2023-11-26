@@ -198,7 +198,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		if scannedUser.CheckIns == nil {
 			checkIns = make([]interface{}, 0)
 		} else {
-			err := json.Unmarshal(user.CheckIns, &checkIns)
+			err := json.Unmarshal(scannedUser.CheckIns, &checkIns)
 			if err != nil {
 				fmt.Println("Error unmarshalling CheckIns:", err)
 				return
