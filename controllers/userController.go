@@ -181,6 +181,17 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	}
 
+	switch bodyData.Context {
+	case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
+		// Valid context, proceed
+	default:
+		// Invalid context, return an error
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid context",
+		})
+		return
+	}
+
 	//Get the user scanning in
 	var scannedUser models.User
 	initializers.DB.First(&scannedUser, "qr_code = ?", bodyData.QRid)
@@ -194,9 +205,9 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	} else if bodyData.Context != REGISTRATION {
 		// Scanning in for food contexts
-		var checkIns []interface{}
+		var checkIns []QRCheckInContext
 		if scannedUser.CheckIns == nil {
-			checkIns = make([]interface{}, 0)
+			checkIns = make([]QRCheckInContext, 0)
 		} else {
 			err := json.Unmarshal(scannedUser.CheckIns, &checkIns)
 			if err != nil {
