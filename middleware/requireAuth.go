@@ -19,24 +19,33 @@ func RequireAuth(c *gin.Context) {
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
+		fmt.Fprintln(os.Stderr, err)
+		return
 	}
 	// Decode/validate it
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(os.Getenv("SECRET")), nil
 	})
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 
 		// Check the exp
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
 
 		// Find the user with token sub
@@ -45,6 +54,8 @@ func RequireAuth(c *gin.Context) {
 
 		if user.ID == 0 {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			fmt.Fprintln(os.Stderr, err)
+			return
 		}
 
 		// Attach to req
@@ -54,7 +65,8 @@ func RequireAuth(c *gin.Context) {
 		c.Next()
 
 	} else {
-		c.AbortWithStatus(http.StatusUnauthorized)
+		c.AbortWithStatus(http.StatusInternalServerError)
+		return
 	}
 
 }
