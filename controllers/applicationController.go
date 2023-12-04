@@ -3,10 +3,11 @@ package controllers
 import (
 	//"encoding/json"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"reflect"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
@@ -28,6 +29,22 @@ func GetApplicaton(c *gin.Context) {
 
 	// If application does not exist, create it and add application to DB
 	if application.ID == 0 {
+
+		// If registration is closed, return error
+		isRegistrationOpen, err := helpers.IsRegistrationOpen()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Failed to create application",
+			})
+			fmt.Fprintln(os.Stderr, err)
+			return
+		}
+		if !isRegistrationOpen {
+			c.JSON(http.StatusForbidden, gin.H{
+				"error": "Applications are now closed",
+			})
+			return
+		}
 
 		if user.Status != models.Registering && user.Status != models.Admin {
 			c.JSON(http.StatusForbidden, gin.H{
@@ -83,8 +100,16 @@ func UpdateApplication(c *gin.Context) {
 		return
 	}
 
-	// If application is sumbitted after 1704085200 (2024-01-01 00:00:00 EST), return error
-	if time.Now().Unix() > 1704085200 {
+	// If registration is closed, return error
+	isRegistrationOpen, err := helpers.IsRegistrationOpen()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update application",
+		})
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
+	if !isRegistrationOpen {
 		c.JSON(http.StatusForbidden, gin.H{
 			"error": "Applications are now closed",
 		})
