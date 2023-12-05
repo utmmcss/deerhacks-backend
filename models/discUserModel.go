@@ -10,7 +10,7 @@ type DiscordUser struct {
 	Banner               string `json:"banner"`
 	AccentColor          int    `json:"accent_color"`
 	GlobalName           string `json:"global_name"`
-	AvatarDecorationData string `json:"avatar_decoration_data"`
+	AvatarDecorationData string `json:"avatar_decoration"`
 	BannerColor          string `json:"banner_color"`
 	MFAEnabled           bool   `json:"mfa_enabled"`
 	Locale               string `json:"locale"`
