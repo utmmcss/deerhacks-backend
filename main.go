@@ -34,6 +34,7 @@ func main() {
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
 	
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
+	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 
 	r.Run()
 
