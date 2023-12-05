@@ -90,6 +90,13 @@ func UpdateAdmin(c *gin.Context) {
 	var currUser models.User
 	for _, u := range userBatch {
 		initializers.DB.First(&currUser, "discord_id = ?", u.DiscordID)
+		// If discord_id does not exist, return error
+		if currUser.ID == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+			})
+			return
+		}
 		if user.Status == models.Admin || (currUser.Status != models.Admin && currUser.Status != models.Moderator) {
 			bodyData := UpdateBody{
 				FirstName:      currUser.FirstName,
