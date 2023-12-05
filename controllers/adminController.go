@@ -13,6 +13,35 @@ import (
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
+type QRCheckInContext string
+
+const (
+	REGISTRATION    QRCheckInContext = "registration"
+	DAY_1_DINNER    QRCheckInContext = "day_1_dinner"
+	DAY_2_BREAKFAST QRCheckInContext = "day_2_breakfast"
+	DAY_2_LUNCH     QRCheckInContext = "day_2_lunch"
+	DAY_2_DINNER    QRCheckInContext = "day_2_dinner"
+	DAY_3_BREAKFAST QRCheckInContext = "day_3_breakfast"
+)
+
+func checkInsValidation(rawMsg json.RawMessage) bool {
+	var checkIns []QRCheckInContext
+	err := json.Unmarshal(rawMsg, &checkIns)
+	if err != nil {
+		fmt.Println("Error unmarshalling internal status:", err)
+		return false
+	}
+	for _, item := range checkIns {
+		switch item {
+		case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
+			// Valid check in context
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 func UpdateAdmin(c *gin.Context) {
 
 	type UpdateBody struct {
@@ -61,7 +90,7 @@ func UpdateAdmin(c *gin.Context) {
 	var currUser models.User
 	for _, u := range userBatch {
 		initializers.DB.First(&currUser, "discord_id = ?", u.DiscordID)
-		if (user.Status == models.Moderator && currUser.Status != models.Admin && currUser.Status != models.Moderator) || user.Status == models.Admin {
+		if user.Status == models.Admin || (currUser.Status != models.Admin && currUser.Status != models.Moderator) {
 			bodyData := UpdateBody{
 				FirstName:      currUser.FirstName,
 				LastName:       currUser.LastName,
@@ -103,12 +132,29 @@ func UpdateAdmin(c *gin.Context) {
 				currUser.Email = email
 			}
 
-			currUser.Status = bodyData.Status
+			//Make sure moderators cannot update status to admin
+			if user.Status == models.Moderator && bodyData.Status == models.Admin {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Moderators cannot update status to admin",
+				})
+				return
+			} else {
+				currUser.Status = bodyData.Status
+			}
+
 			currUser.InternalNotes = bodyData.InternalNotes
 			currUser.InternalStatus = bodyData.InternalStatus
 
 			if !reflect.DeepEqual(bodyData.CheckIns, currUser.CheckIns) {
-				currUser.CheckIns = bodyData.CheckIns
+				if checkInsValidation(bodyData.CheckIns) {
+					currUser.CheckIns = bodyData.CheckIns
+				} else {
+					c.JSON(http.StatusBadRequest, gin.H{
+						"error": "Invalid CheckIns context",
+					})
+					return
+				}
+
 			}
 
 			// Save the updated user object to the database
@@ -118,6 +164,11 @@ func UpdateAdmin(c *gin.Context) {
 				})
 				return
 			}
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Moderators cannot update admins or moderators",
+			})
+			return
 		}
 		//Clears currUser in preperation for next user info
 		currUser = models.User{}
