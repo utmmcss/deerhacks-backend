@@ -102,6 +102,9 @@ func UpdateUser(c *gin.Context) {
 			return
 		}
 		user.Email = email
+		if user.Status == models.Registering {
+			user.Status = models.Pending
+		}
 		isUserChanged = true
 	}
 
@@ -111,7 +114,16 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Save the updated user object to the database
-	if initializers.DB.Save(&user).Error != nil {
+	err = initializers.DB.Save(&user).Error
+	if err != nil {
+
+		if helpers.IsUniqueViolationError(err) {
+			c.JSON(http.StatusConflict, gin.H{
+				"error": "Email already in use",
+			})
+			return
+		}
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update user",
 		})
