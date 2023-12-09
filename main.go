@@ -24,6 +24,8 @@ func main() {
 	config := cors.DefaultConfig()
 	config.AllowCredentials = true
 	config.AllowOrigins = []string{"https://deerhacks.ca", "https://2024.deerhacks.ca"}
+	config.ExposeHeaders = []string{"Set-Cookie"}
+	config.AllowHeaders = append(config.AllowHeaders, "Cookie")
 	if appEnv == "development" {
 		config.AllowOrigins = []string{"http://localhost:3000"}
 	}
@@ -32,7 +34,7 @@ func main() {
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
-	
+
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
 	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 
