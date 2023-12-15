@@ -244,12 +244,12 @@ func Login(c *gin.Context) {
 	// Send it back
 	c.SetSameSite(http.SameSiteLaxMode)
 
-	domain := ""
+	domain := "localhost"
 
 	if os.Getenv("APP_ENV") != "development" {
 		domain = "deerhacks.ca"
 	}
 
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, true, true)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
 	c.JSON(http.StatusOK, gin.H{})
 }

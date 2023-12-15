@@ -10,7 +10,7 @@ type InnerApplication struct {
 	Age                   int              `json:"age"`
 	Gender                string           `json:"gender"`
 	Pronoun               string           `json:"pronoun"`
-	Ethnicity             string           `json:"ethnicity"`
+	Ethnicity             []string         `json:"ethnicity"`
 	Country               string           `json:"country"`
 	City                  string           `json:"city"`
 	Province              string           `json:"province"`
@@ -28,11 +28,12 @@ type InnerApplication struct {
 	Education             string           `json:"education"`
 	School                string           `json:"school"`
 	Program               string           `json:"program"`
+	Portfolio             string           `json:"portfolio"`
 	Github                string           `json:"github"`
 	Linkedin              string           `json:"linkedin"`
 	ResumeConsent         bool             `json:"resume_consent"`
 	HackathonExperience   string           `json:"hackathon_experience"`
-	DeerhacksExperience   bool             `json:"deerhacks_experience"`
+	DeerhacksExperience   []string         `json:"deerhacks_experience"`
 	TeamPreference        string           `json:"team_preference"`
 	Interests             []string         `json:"interests"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch"`
@@ -51,6 +52,16 @@ type ApplicationResponse struct {
 
 func ToApplicationResponse(application models.Application) ApplicationResponse {
 
+	var ethnicity = []string{}
+	var dietRestriction = []string{}
+	var deerhacksExperience = []string{}
+	var interests = []string{}
+
+	application.Ethnicity.AssignTo(&ethnicity)
+	application.DietRestriction.AssignTo(&dietRestriction)
+	application.DeerhacksExperience.AssignTo(&deerhacksExperience)
+	application.Interests.AssignTo(&interests)
+
 	return ApplicationResponse{
 		IsDraft: application.IsDraft,
 		Application: InnerApplication{
@@ -59,7 +70,7 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			Age:                   application.Age,
 			Gender:                application.Gender,
 			Pronoun:               application.Pronoun,
-			Ethnicity:             application.Ethnicity,
+			Ethnicity:             ethnicity,
 			Country:               application.Country,
 			City:                  application.City,
 			Province:              application.Province,
@@ -67,7 +78,7 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			EmergencyNumber:       application.EmergencyNumber,
 			EmergencyRelationship: application.EmergencyRelationship,
 			ShirtSize:             application.ShirtSize,
-			DietRestriction:       application.DietRestriction,
+			DietRestriction:       dietRestriction,
 			Day1Dinner:            application.Day1Dinner,
 			Day2Breakfast:         application.Day2Breakfast,
 			Day2Lunch:             application.Day2Lunch,
@@ -77,13 +88,14 @@ func ToApplicationResponse(application models.Application) ApplicationResponse {
 			Education:             application.Education,
 			School:                application.School,
 			Program:               application.Program,
+			Portfolio:             application.Portfolio,
 			Github:                application.Github,
 			Linkedin:              application.Linkedin,
 			ResumeConsent:         application.ResumeConsent,
 			HackathonExperience:   application.HackathonExperience,
-			DeerhacksExperience:   application.DeerhacksExperience,
+			DeerhacksExperience:   deerhacksExperience,
 			TeamPreference:        application.TeamPreference,
-			Interests:             application.Interests,
+			Interests:             interests,
 			DeerhacksPitch:        application.DeerhacksPitch,
 			SharedProject:         application.SharedProject,
 			FutureTech:            application.FutureTech,
