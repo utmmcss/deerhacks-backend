@@ -12,8 +12,10 @@ require (
 )
 
 require (
+	github.com/aws/aws-sdk-go v1.49.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jinzhu/copier v0.4.0 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 )
 

@@ -38,6 +38,9 @@ func main() {
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
 	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 
+	r.GET("/resume-get", middleware.RequireAuth, middleware.ResumeGetRateLimit, controllers.GetResume)
+	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
+
 	r.Run()
 
 	// r.ForwardedByClientIP = true
