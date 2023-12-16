@@ -1,107 +1,62 @@
 package helpers
 
 import (
+	"strconv"
+	"strings"
 
-	"github.com/jackc/pgtype"
+	"github.com/go-playground/validator/v10"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
-func isListEmpty(list pgtype.JSONB) bool {
-
-	var strList = []string{}
-	list.AssignTo(&strList)
-
-	return len(strList) == 0
+func ValidateWordCount(fl validator.FieldLevel) bool {
+    value := fl.Field().String()
+    words := strings.Fields(value)
+	count, err := strconv.Atoi(fl.Param())
+	if err != nil {
+		return false
+	}
+    return len(words) <= count
 }
 
-func ValidateApplication(application models.Application) (bool, string) {
-	if application.PhoneNumber == "" || len(application.PhoneNumber) < 10 {
-		return false, "Phone number is required"
+func ValidateApplication(application models.Application) (bool, []string) {
+	validate := validator.New()
+	validate.RegisterValidation("wordcount", ValidateWordCount)
+	err := validate.Struct(ToApplicationResponse((application)))
+
+	if err == nil {
+		return true, []string{}
 	}
-	if application.Age < 18 {
-		return false, "You must be at least 18 years old to apply"
+
+	errList := []string{}
+	for _, field := range err.(validator.ValidationErrors) {
+		switch field.Field() {
+		case "PhoneNumber":
+			errList = append(errList, "Phone number is invalid")
+		case "Age":
+			errList = append(errList, "You must be at least 18 years old to apply")
+		case "ShirtSize":
+			errList = append(errList, "Shirt size is invalid")
+		case "EmergencyNumber":
+			errList = append(errList, "Emergency contact number is invalid")
+		case "DietRestriction":
+			errList = append(errList, "Diet restrictions field missing")
+		case "ResumeConsent":
+			errList = append(errList, "Resume consent must be given")
+		case "Interests":
+			errList = append(errList, "Interests field missing")
+		case "DeerhacksPitch":
+			errList = append(errList, "Deerhacks pitch must be 100 words or less")
+		case "SharedProject":
+			errList = append(errList, "Shared project must be 200 words or less")
+		case "FutureTech":
+			errList = append(errList, "Future tech must be 200 words or less")
+		case "MlhCodeAgreement":
+			errList = append(errList, "MLH code of conduct must be agreed to")
+		case "MlhAuthorize":
+			errList = append(errList, "MLH authorization must be given")
+		default:
+			errList = append(errList, field.Field()+" is required")
+		}
 	}
-	if application.Gender == "" {
-		return false, "Gender is required"
-	}
-	if application.Pronoun == "" {
-		return false, "Pronoun is required"
-	}
-	if isListEmpty(application.Ethnicity) {
-		return false, "Ethnicity is required"
-	}
-	if application.Country == "" {
-		return false, "Country is required"
-	}
-	if application.City == "" {
-		return false, "City is required"
-	}
-	if application.EmergencyName == "" {
-		return false, "Emergency contact name is required"
-	}
-	if application.EmergencyNumber == "" || len(application.EmergencyNumber) < 10 {
-		return false, "Emergency contact number is required"
-	}
-	if application.EmergencyRelationship == "" {
-		return false, "Emergency contact relationship is required"
-	}
-	if application.ShirtSize == "" {
-		return false, "Shirt size is required"
-	}
-	if isListEmpty(application.DietRestriction) {
-		return false, "Diet restrictions field missing"
-	}
-	if application.Education == "" {
-		return false, "Education level is required"
-	}
-	if application.School == "" {
-		return false, "School is required"
-	}
-	if application.Program == "" {
-		return false, "Program is required"
-	}
-	// TODO: Uncomment when resume upload is implemented
-	// if application.ResumeLink == "" {
-	// 	return false, "Resume link is required"
-	// }
-	// if application.ResumeFilename == "" {
-	// 	return false, "Resume filename is required"
-	// }
-	// if application.ResumeHash == nil {
-	// 	return false, "Resume hash is required"
-	// }
-	if !application.ResumeConsent {
-		return false, "Resume consent is required"
-	}
-	if isListEmpty(application.DeerhacksExperience) {
-		return false, "Deerhacks experience is required"
-	}
-	if application.HackathonExperience == "" {
-		return false, "Hackathon experience is required"
-	}
-	if application.TeamPreference == "" {
-		return false, "Team preference is required"
-	}
-	if isListEmpty(application.Interests) {
-		return false, "Interests field missing"
-	}
-	if application.DeerhacksPitch == "" {
-		return false, "Deerhacks pitch is required"
-	}
-	if application.SharedProject == "" {
-		return false, "Shared project is required"
-	}
-	if application.FutureTech == "" {
-		return false, "Future tech is required"
-	}
-	if application.DeerhacksReach == "" {
-		return false, "Deerhacks reach is required"
-	}
-	if !application.MlhCodeAgreement {
-		return false, "MLH code agreement is required"
-	}
-	if !application.MlhAuthorize {
-		return false, "MLH authorization is required"
-	}
-	return true, ""
+	return false, errList
 }

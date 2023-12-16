@@ -5,44 +5,44 @@ import (
 )
 
 type InnerApplication struct {
-	PhoneNumber           string           `json:"phone_number"`
+	PhoneNumber           string           `json:"phone_number" validate:"required,gte=10"`
 	IsSubscribed          bool             `json:"is_subscribed"`
-	Age                   int              `json:"age"`
-	Gender                string           `json:"gender"`
-	Pronoun               string           `json:"pronoun"`
-	Ethnicity             []string         `json:"ethnicity"`
-	Country               string           `json:"country"`
-	City                  string           `json:"city"`
+	Age                   int              `json:"age" validate:"required,gte=18"`
+	Gender                string           `json:"gender" validate:"required"`
+	Pronoun               string           `json:"pronoun" validate:"required"`
+	Ethnicity             []string         `json:"ethnicity" validate:"required,gt=0"`
+	Country               string           `json:"country" validate:"required"`
+	City                  string           `json:"city" validate:"required"`
 	Province              string           `json:"province"`
-	EmergencyName         string           `json:"emergency_name"`
-	EmergencyNumber       string           `json:"emergency_number"`
-	EmergencyRelationship string           `json:"emergency_relationship"`
-	ShirtSize             models.ShirtSize `json:"shirt_size"`
-	DietRestriction       []string         `json:"diet_restriction"`
+	EmergencyName         string           `json:"emergency_name" validate:"required"`
+	EmergencyNumber       string           `json:"emergency_number" validate:"required,gte=10"`
+	EmergencyRelationship string           `json:"emergency_relationship" validate:"required"`
+	ShirtSize             models.ShirtSize `json:"shirt_size" validate:"required,oneof=xs s m l xl"`
+	DietRestriction       []string         `json:"diet_restriction" validate:"required,gt=0"`
 	Day1Dinner            bool             `json:"day1_dinner"`
 	Day2Breakfast         bool             `json:"day2_breakfast"`
 	Day2Lunch             bool             `json:"day2_lunch"`
 	Day2Dinner            bool             `json:"day2_dinner"`
 	Day3Breakfast         bool             `json:"day3_breakfast"`
 	AdditionalInfo        string           `json:"additional_info"`
-	Education             string           `json:"education"`
-	School                string           `json:"school"`
-	Program               string           `json:"program"`
+	Education             string           `json:"education" validate:"required"`
+	School                string           `json:"school"  validate:"required"`
+	Program               string           `json:"program"  validate:"required"`
 	Portfolio             string           `json:"portfolio"`
 	Github                string           `json:"github"`
 	Linkedin              string           `json:"linkedin"`
-	ResumeConsent         bool             `json:"resume_consent"`
-	HackathonExperience   string           `json:"hackathon_experience"`
-	DeerhacksExperience   []string         `json:"deerhacks_experience"`
-	TeamPreference        string           `json:"team_preference"`
-	Interests             []string         `json:"interests"`
-	DeerhacksPitch        string           `json:"deerhacks_pitch"`
-	SharedProject         string           `json:"shared_project"`
-	FutureTech            string           `json:"future_tech"`
-	DeerhacksReach        string           `json:"deerhacks_reach"`
-	MlhCodeAgreement      bool             `json:"mlh_code_agreement"`
+	ResumeConsent         bool             `json:"resume_consent" validate:"eq=true"`
+	HackathonExperience   string           `json:"hackathon_experience" validate:"required,gt=0"`
+	DeerhacksExperience   []string         `json:"deerhacks_experience" validate:"required,gt=0"`
+	TeamPreference        string           `json:"team_preference" validate:"required,gt=0"`
+	Interests             []string         `json:"interests" validate:"required,gt=0"`
+	DeerhacksPitch        string           `json:"deerhacks_pitch" validate:"required,wordcount=100"`
+	SharedProject         string           `json:"shared_project" validate:"required,wordcount=200"`
+	FutureTech            string           `json:"future_tech" validate:"required,wordcount=200"`
+	DeerhacksReach        string           `json:"deerhacks_reach" validate:"required,gt=0"`
+	MlhCodeAgreement      bool             `json:"mlh_code_agreement" validate:"eq=true"`
 	MlhSubscribe          bool             `json:"mlh_subscribe"`
-	MlhAuthorize          bool             `json:"mlh_authorize"`
+	MlhAuthorize          bool             `json:"mlh_authorize" validate:"eq=true"`
 }
 
 type ApplicationResponse struct {
