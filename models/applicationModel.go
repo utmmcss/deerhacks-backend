@@ -38,16 +38,17 @@ type Application struct {
 	Day2Lunch             bool
 	Day2Dinner            bool
 	Day3Breakfast         bool
-	AdditionalInfo        string  `gorm:"size:128"`
-	Education             string  `gorm:"size:128"`
-	School                string  `gorm:"size:128"`
-	Program               string  `gorm:"size:128"`
-	ResumeLink            string  `gorm:"size:128"`
-	ResumeFilename        string  `gorm:"size:128"`
-	ResumeHash            *string `gorm:"size:128"`
-	Portfolio             string  `gorm:"size:128"`
-	Github                string  `gorm:"size:128"`
-	Linkedin              string  `gorm:"size:128"`
+	AdditionalInfo        string `gorm:"size:128"`
+	Education             string `gorm:"size:128"`
+	School                string `gorm:"size:128"`
+	Program               string `gorm:"size:128"`
+	ResumeLink            string `gorm:"size:5000"`
+	ResumeFilename        string `gorm:"size:128"`
+	ResumeHash            string `gorm:"size:128"`
+	ResumeExpiry          string `gorm:"size:128"`
+	Portfolio             string `gorm:"size:128"`
+	Github                string `gorm:"size:128"`
+	Linkedin              string `gorm:"size:128"`
 	ResumeConsent         bool
 	HackathonExperience   string       `gorm:"size:128"`
 	DeerhacksExperience   pgtype.JSONB `gorm:"type:jsonb;default:'[]'"`
