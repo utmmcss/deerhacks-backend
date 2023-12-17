@@ -10,7 +10,7 @@ type InnerApplication struct {
 	Age                   int              `json:"age" validate:"required,gte=18,lt=100"`
 	Gender                string           `json:"gender" validate:"required,lte=128"`
 	Pronoun               string           `json:"pronoun" validate:"required,lte=128"`
-	Ethnicity             []string         `json:"ethnicity" validate:"required,gt=0,dive,lte=128"`
+	Ethnicity             []string         `json:"ethnicity" validate:"required,gt=0,lt=20,dive,lte=128"`
 	Country               string           `json:"country" validate:"required,lte=128"`
 	City                  string           `json:"city" validate:"required,lte=128"`
 	Province              string           `json:"province" validate:"lte=128"`
@@ -18,7 +18,7 @@ type InnerApplication struct {
 	EmergencyNumber       string           `json:"emergency_number" validate:"required,lte=128"`
 	EmergencyRelationship string           `json:"emergency_relationship" validate:"required,lte=128"`
 	ShirtSize             models.ShirtSize `json:"shirt_size" validate:"required,oneof=XS S M L XL XXL"`
-	DietRestriction       []string         `json:"diet_restriction" validate:"required,gt=0,dive,lte=128"`
+	DietRestriction       []string         `json:"diet_restriction" validate:"required,gt=0,lt=20,dive,lte=128"`
 	Day1Dinner            bool             `json:"day1_dinner"`
 	Day2Breakfast         bool             `json:"day2_breakfast"`
 	Day2Lunch             bool             `json:"day2_lunch"`
@@ -33,9 +33,9 @@ type InnerApplication struct {
 	Linkedin              string           `json:"linkedin" validate:"lte=128"`
 	ResumeConsent         bool             `json:"resume_consent" validate:"eq=true"`
 	HackathonExperience   string           `json:"hackathon_experience" validate:"required,lte=128"`
-	DeerhacksExperience   []string         `json:"deerhacks_experience" validate:"required,gt=0,dive,lte=128"`
+	DeerhacksExperience   []string         `json:"deerhacks_experience" validate:"required,gt=0,lt=20,dive,lte=128"`
 	TeamPreference        string           `json:"team_preference" validate:"required,lte=128"`
-	Interests             []string         `json:"interests" validate:"required,gt=0,dive,lte=128"`
+	Interests             []string         `json:"interests" validate:"required,gt=0,lt=20,dive,lte=128"`
 	DeerhacksPitch        string           `json:"deerhacks_pitch" validate:"required,lte=1500"`
 	SharedProject         string           `json:"shared_project" validate:"required,lte=1500"`
 	FutureTech            string           `json:"future_tech" validate:"required,lte=1500"`
