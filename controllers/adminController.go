@@ -186,11 +186,6 @@ func UpdateAdmin(c *gin.Context) {
 
 func AdminQRCheckIn(c *gin.Context) {
 
-	type QRCheckIn struct {
-		QRid    string           `json:"qrId"`
-		Context QRCheckInContext `json:"context"`
-	}
-
 	userObj, _ := c.Get("user")
 
 	user := userObj.(models.User)
@@ -202,6 +197,12 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	}
 
+	type QRCheckIn struct {
+		QRid    string           `json:"qrId"`
+		Context QRCheckInContext `json:"context"`
+	}
+	var bodyData QRCheckIn
+
 	bodyObj, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -210,8 +211,6 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	}
 	defer c.Request.Body.Close()
-
-	var bodyData QRCheckIn
 
 	if json.Unmarshal(bodyObj, &bodyData) != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -234,6 +233,13 @@ func AdminQRCheckIn(c *gin.Context) {
 	//Get the user scanning in
 	var scannedUser models.User
 	initializers.DB.First(&scannedUser, "qr_code = ?", bodyData.QRid)
+	// If qr_code does not exist, return error
+	if scannedUser.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User not found",
+		})
+		return
+	}
 
 	if scannedUser.Status == models.Admin {
 		// Return success if scanning in admins
@@ -244,32 +250,32 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	} else if bodyData.Context != REGISTRATION {
 		// Scanning in for food contexts
-		var checkIns []QRCheckInContext
+		var checkIns map[QRCheckInContext]int
 		if scannedUser.CheckIns == nil {
-			checkIns = make([]QRCheckInContext, 0)
+			checkIns = make(map[QRCheckInContext]int)
 		} else {
 			err := json.Unmarshal(scannedUser.CheckIns, &checkIns)
 			if err != nil {
 				fmt.Println("Error unmarshalling CheckIns:", err)
 				return
 			}
-			//Check if user has already scanned in for this meal
-			for _, item := range checkIns {
-				if item == bodyData.Context {
-					c.JSON(http.StatusBadRequest, gin.H{
-						"success": false,
-						"message": fmt.Sprintf("%s could not be checked in: User has already scanned in for this meal", scannedUser.Username),
-					})
-					return
-				}
-			}
 		}
-		if (scannedUser.Status == models.Moderator && len(checkIns) < 3) || (scannedUser.Status == models.Volunteer && len(checkIns) < 2) || (scannedUser.Status == models.Attended) {
-			checkIns = append(checkIns, bodyData.Context)
+
+		value, exists := checkIns[bodyData.Context]
+		if exists && ((scannedUser.Status == models.Moderator && value < 3) || (scannedUser.Status == models.Volunteer && value < 2)) {
+			checkIns[bodyData.Context] += 1
+		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended) {
+			checkIns[bodyData.Context] = 1
+		} else if exists {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("%s could not be checked in: Reached maximum number of check ins for this meal", scannedUser.Username),
+			})
+			return
 		} else {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": fmt.Sprintf("%s could not be checked in: Status is not valid for food context", scannedUser.Username),
+				"message": fmt.Sprintf("%s could not be checked in: User status is not valid for food context", scannedUser.Username),
 			})
 			return
 		}
@@ -307,9 +313,9 @@ func AdminQRCheckIn(c *gin.Context) {
 		return
 	}
 
+	// Save scanned user to database
 	err = initializers.DB.Save(&scannedUser).Error
 	if err != nil {
-
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "Failed to update user",
 		})
