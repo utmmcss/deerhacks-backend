@@ -17,7 +17,7 @@ func ValidateApplication(application models.Application) (bool, []string) {
 	for _, field := range err.(validator.ValidationErrors) {
 		switch field.Field() {
 		case "Age":
-			errList = append(errList, "Age is missing or under 18")
+			errList = append(errList, "Age is missing or under 18/over 100")
 		case "ShirtSize":
 			errList = append(errList, "ShirtSize is missing or invalid")
 		case "ResumeConsent":

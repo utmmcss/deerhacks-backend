@@ -7,7 +7,7 @@ import (
 type InnerApplication struct {
 	PhoneNumber           string           `json:"phone_number" validate:"required,lte=128"`
 	IsSubscribed          bool             `json:"is_subscribed"`
-	Age                   int              `json:"age" validate:"required,gte=18,lt=100"`
+	Age                   int              `json:"age" validate:"required,gte=18,lte=100"`
 	Gender                string           `json:"gender" validate:"required,lte=128"`
 	Pronoun               string           `json:"pronoun" validate:"required,lte=128"`
 	Ethnicity             []string         `json:"ethnicity" validate:"required,gt=0,lt=20,dive,lte=128"`
