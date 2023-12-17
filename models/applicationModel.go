@@ -8,11 +8,12 @@ import (
 type ShirtSize string
 
 const (
-	ExtraSmall ShirtSize = "xs"
-	Small      ShirtSize = "s"
-	Medium     ShirtSize = "m"
-	Large      ShirtSize = "l"
-	ExtraLarge ShirtSize = "xl"
+	ExtraSmall ShirtSize = "XS"
+	Small      ShirtSize = "S"
+	Medium     ShirtSize = "M"
+	Large      ShirtSize = "L"
+	ExtraLarge ShirtSize = "XL"
+	DoubleXL   ShirtSize = "XXL"
 )
 
 type Application struct {
@@ -56,7 +57,7 @@ type Application struct {
 	DeerhacksPitch        string       `gorm:"size:1500"`
 	SharedProject         string       `gorm:"size:1500"`
 	FutureTech            string       `gorm:"size:1500"`
-	DeerhacksReach        string       `gorm:"size:1500"`
+	DeerhacksReach        string       `gorm:"size:128"`
 	MlhCodeAgreement      bool
 	MlhSubscribe          bool
 	MlhAuthorize          bool
