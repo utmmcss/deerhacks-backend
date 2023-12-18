@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
@@ -25,16 +24,18 @@ const (
 )
 
 func checkInsValidation(rawMsg json.RawMessage) bool {
-	var checkIns []QRCheckInContext
+	var checkIns map[QRCheckInContext]int
 	err := json.Unmarshal(rawMsg, &checkIns)
 	if err != nil {
 		fmt.Println("Error unmarshalling internal status:", err)
 		return false
 	}
-	for _, item := range checkIns {
-		switch item {
+	for key, val := range checkIns {
+		switch key {
 		case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
-			// Valid check in context
+			if val < 0 {
+				return false
+			}
 		default:
 			return false
 		}
@@ -152,16 +153,13 @@ func UpdateAdmin(c *gin.Context) {
 			currUser.InternalNotes = bodyData.InternalNotes
 			currUser.InternalStatus = bodyData.InternalStatus
 
-			if !reflect.DeepEqual(bodyData.CheckIns, currUser.CheckIns) {
-				if checkInsValidation(bodyData.CheckIns) {
-					currUser.CheckIns = bodyData.CheckIns
-				} else {
-					c.JSON(http.StatusBadRequest, gin.H{
-						"error": "Invalid CheckIns context",
-					})
-					return
-				}
-
+			if checkInsValidation(bodyData.CheckIns) {
+				currUser.CheckIns = bodyData.CheckIns
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Invalid CheckIns context",
+				})
+				return
 			}
 
 			// Save the updated user object to the database
