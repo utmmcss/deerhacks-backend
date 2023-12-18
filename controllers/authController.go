@@ -27,7 +27,7 @@ func AddToDiscord(user *models.User) bool {
 
 	req, err := http.NewRequest("PUT", baseURL, bytes.NewBufferString(formData.Encode()))
 	if err != nil {
-		fmt.Errorf("Error forming request (usersController.AddToDiscord): %s", err)
+		fmt.Errorf("error forming request (usersController.AddToDiscord): %s", err)
 		return false
 	}
 
@@ -35,7 +35,7 @@ func AddToDiscord(user *models.User) bool {
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Errorf("Failed to add user to DeerHacks server: %s", err)
+		fmt.Errorf("failed to add user to DeerHacks server: %s", err)
 		return false
 	}
 	defer resp.Body.Close()
@@ -58,14 +58,14 @@ func FetchDiscordDetails(code string) (*models.DiscordDetails, error) {
 	// Send POST request with URL-encoded data
 	resp, err := http.PostForm(urlStr, data)
 	if err != nil {
-		return nil, fmt.Errorf("Error sending request to Discord token API: %s", err)
+		return nil, fmt.Errorf("error sending request to Discord token API: %s", err)
 	}
 	defer resp.Body.Close()
 
 	// Read the response
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading response: %s", err)
+		return nil, fmt.Errorf("error reading response: %s", err)
 	}
 
 	// Check for application level error
@@ -78,7 +78,7 @@ func FetchDiscordDetails(code string) (*models.DiscordDetails, error) {
 	// Unmarshal the JSON Response
 	var details models.DiscordDetails
 	if err := json.Unmarshal(body, &details); err != nil {
-		return nil, fmt.Errorf("Error unmarshalling response: %v", err)
+		return nil, fmt.Errorf("error unmarshalling response: %v", err)
 	}
 
 	return &details, nil
@@ -184,14 +184,16 @@ func Login(c *gin.Context) {
 	if user.ID == 0 {
 
 		user = models.User{
-			DiscordId:    userDetails.ID,
-			Avatar:       userDetails.Avatar,
-			Username:     userDetails.Username,
-			Email:        userDetails.Email,
-			QRCode:       uuid.New().String(),
-			AuthToken:    details.AccessToken,
-			RefreshToken: details.RefreshToken,
-			TokenExpiry:  expiry.Format(time.RFC3339),
+			DiscordId:             userDetails.ID,
+			Avatar:                userDetails.Avatar,
+			Username:              userDetails.Username,
+			Email:                 userDetails.Email,
+			QRCode:                uuid.New().String(),
+			AuthToken:             details.AccessToken,
+			RefreshToken:          details.RefreshToken,
+			TokenExpiry:           expiry.Format(time.RFC3339),
+			ResumeGetRateLimit:    time.Now().Format(time.RFC3339),
+			ResumeUpdateRateLimit: time.Now().Format(time.RFC3339),
 		}
 
 		result := initializers.DB.Create(&user)
@@ -243,7 +245,13 @@ func Login(c *gin.Context) {
 
 	// Send it back
 	c.SetSameSite(http.SameSiteLaxMode)
-	// TODO change false to true when publishing
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", "", false, true)
+
+	domain := "localhost"
+
+	if os.Getenv("APP_ENV") != "development" {
+		domain = "deerhacks.ca"
+	}
+
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
 	c.JSON(http.StatusOK, gin.H{})
 }
