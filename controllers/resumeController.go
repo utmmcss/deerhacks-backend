@@ -101,7 +101,7 @@ func GetResume(c *gin.Context) {
 	}
 
 	svc := s3.New(sess)
-	filepath := user.DiscordId + "/" + application.ResumeFilename
+	filepath := user.DiscordId + "/" + user.FirstName + "_" + "Resume.pdf"
 
 	presigned_url, err := getPresignedURL(svc, filepath)
 
@@ -159,10 +159,10 @@ func UpdateResume(c *gin.Context) {
 	filename := file.Filename
 	fileSizeMB := file.Size / (1024 * 1024)
 
-	// ensure size is less than 2 MB
-	if fileSizeMB > 2 {
+	// ensure size is less than 2 MB and limit file length
+	if fileSizeMB > 2 || len(filename) > 100 {
 		c.AbortWithStatus(413)
-		fmt.Println("UpdateResume - file too large")
+		fmt.Println("UpdateResume - file/filename too large")
 		return
 	}
 
@@ -289,7 +289,7 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeLink = presigned_url
 	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
 	application.ResumeHash = computedHash
-	application.ResumeFilename = filename
+	application.ResumeFilename = file.Filename
 	result := initializers.DB.Save(&application)
 
 	if result.Error != nil {
@@ -301,7 +301,7 @@ func UpdateResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
+		"resumeFileName": file.Filename,
 		"resumeLink":     application.ResumeLink,
 	})
 
