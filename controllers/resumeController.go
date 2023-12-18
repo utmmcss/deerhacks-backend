@@ -159,8 +159,8 @@ func UpdateResume(c *gin.Context) {
 	filename := file.Filename
 	fileSizeMB := file.Size / (1024 * 1024)
 
-	// ensure size is less than 5 MB
-	if fileSizeMB > 5 {
+	// ensure size is less than 2 MB
+	if fileSizeMB > 2 {
 		c.AbortWithStatus(413)
 		fmt.Println("UpdateResume - file too large")
 		return
