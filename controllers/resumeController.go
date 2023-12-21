@@ -146,7 +146,7 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 	if application.ResumeUpdateCount >= 3 {
-		c.AbortWithStatus(http.StatusForbidden)
+		c.AbortWithStatus(http.StatusTooManyRequests)
 		fmt.Println("UpdateResume - User allowed only 3 update requests")
 		return
 	}
