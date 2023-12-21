@@ -79,11 +79,12 @@ func GetResume(c *gin.Context) {
 		return
 	}
 
-	// If expiry has not arrived yet, return link and filename
+	// If expiry has not arrived yet, return link and filename along with resume update count
 	if !passed {
 		c.JSON(http.StatusOK, gin.H{
-			"resumeFileName": application.ResumeFilename,
-			"resumeLink":     application.ResumeLink,
+			"resumeFileName":    application.ResumeFilename,
+			"resumeLink":        application.ResumeLink,
+			"resumeUpdateCount": application.ResumeUpdateCount,
 		})
 		return
 	}
@@ -125,12 +126,30 @@ func GetResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
-		"resumeLink":     application.ResumeLink,
+		"resumeFileName":    application.ResumeFilename,
+		"resumeLink":        application.ResumeLink,
+		"resumeUpdateCount": application.ResumeUpdateCount,
 	})
 }
 
 func UpdateResume(c *gin.Context) {
+
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
+
+	var application models.Application
+	initializers.DB.First(&application, "discord_id = ?", user.DiscordId)
+
+	if application.ID == 0 {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("UpdateResume - Application does not exist")
+		return
+	}
+	if application.ResumeUpdateCount >= 3 {
+		c.AbortWithStatus(http.StatusForbidden)
+		fmt.Println("UpdateResume - User allowed only 3 update requests")
+		return
+	}
 
 	// Retrieve the file from the posted form-data
 	file, err := c.FormFile("file")
@@ -173,21 +192,9 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
-	userObj, _ := c.Get("user")
-	user := userObj.(models.User)
-
 	// Force file name to be a certain name
 	// Ensures files are overwritten in S3
 	filename = user.FirstName + "_" + "Resume.pdf"
-
-	var application models.Application
-	initializers.DB.First(&application, "discord_id = ?", user.DiscordId)
-
-	if application.ID == 0 {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Application does not exist")
-		return
-	}
 
 	// Open the file
 	uploadedFile, err := file.Open()
@@ -290,6 +297,7 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
 	application.ResumeHash = computedHash
 	application.ResumeFilename = file.Filename
+	application.ResumeUpdateCount += 1
 	result := initializers.DB.Save(&application)
 
 	if result.Error != nil {
@@ -301,8 +309,9 @@ func UpdateResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": file.Filename,
-		"resumeLink":     application.ResumeLink,
+		"resumeFileName":    file.Filename,
+		"resumeLink":        application.ResumeLink,
+		"resumeUpdateCount": application.ResumeUpdateCount,
 	})
 
 }
