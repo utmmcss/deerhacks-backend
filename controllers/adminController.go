@@ -230,12 +230,67 @@ func GetUserList(c *gin.Context) {
 			userResponse["username"] = userApp.Username
 			userResponse["email"] = userApp.Email
 			userResponse["status"] = userApp.Status
+			userResponse["internal_status"] = userApp.InternalStatus
+			userResponse["internal_notes"] = userApp.InternalNotes
+			userResponse["check_ins"] = userApp.CheckIns
+			userResponse["qr_code"] = userApp.QRCode
 
 			// --- Information can be added or Removed as needed ---
+			userResponse["is_draft"] = userApp.IsDraft
+			userResponse["phone_number"] = userApp.PhoneNumber
+			userResponse["is_subscribed"] = userApp.IsSubscribed
+			userResponse["age"] = userApp.Age
+			userResponse["gender"] = userApp.Gender
+			userResponse["pronouns"] = userApp.Pronoun
+			// userResponse["ethnicity"] = userApp.Ethnicity
 			userResponse["country"] = userApp.Country
+			userResponse["city"] = userApp.City
+			userResponse["province"] = userApp.Province
+			userResponse["emergency_name"] = userApp.EmergencyName
+			userResponse["emergency_number"] = userApp.EmergencyNumber
+			userResponse["emergency_relationship"] = userApp.EmergencyRelationship
+			userResponse["shirt_size"] = userApp.ShirtSize
+			// userResponse["diet_restriction"] = userApp.DietRestriction
+
+			// food information
+			userResponse["day1_dinner"] = userApp.Day1Dinner
+			userResponse["day2_breakfast"] = userApp.Day2Breakfast
+			userResponse["day2_lunch"] = userApp.Day2Lunch
+			userResponse["day2_dinner"] = userApp.Day2Dinner
+			userResponse["day3_breakfast"] = userApp.Day3Breakfast
+			userResponse["additional_info"] = userApp.AdditionalInfo
+
+			// school information
 			userResponse["education"] = userApp.Education
 			userResponse["school"] = userApp.School
 			userResponse["program"] = userApp.Program
+
+			// resume and socials
+			userResponse["resume_link"] = userApp.ResumeLink
+			userResponse["resume_filename"] = userApp.ResumeFilename
+			userResponse["portfolio"] = userApp.Portfolio
+			userResponse["github"] = userApp.Github
+			userResponse["linkedin"] = userApp.Linkedin
+			userResponse["resume_consent"] = userApp.ResumeConsent
+
+			// experiences
+			userResponse["hackathon_experience"] = userApp.HackathonExperience
+			// userResponse["deerhacks_experience"] = userApp.DeerhacksExperience
+
+			// preferences
+			userResponse["team_preference"] = userApp.TeamPreference
+			// userResponse["interests"] = userApp.Interests
+
+			// answers
+			userResponse["deerhacks_pitch"] = userApp.DeerhacksPitch
+			userResponse["shared_project"] = userApp.SharedProject
+			userResponse["future_tech"] = userApp.FutureTech
+			userResponse["deerhacks_reach"] = userApp.DeerhacksReach
+
+			//mlh
+			userResponse["mlh_code_agreement"] = userApp.MlhCodeAgreement
+			userResponse["mlh_subscribe"] = userApp.MlhSubscribe
+			userResponse["mlh_authorize"] = userApp.MlhAuthorize
 
 			usersResponse = append(usersResponse, userResponse)
 		}
@@ -250,6 +305,10 @@ func GetUserList(c *gin.Context) {
 			userResponse["username"] = user.Username
 			userResponse["email"] = user.Email
 			userResponse["status"] = user.Status
+			userResponse["internal_status"] = user.InternalStatus
+			userResponse["internal_notes"] = user.InternalNotes
+			userResponse["check_ins"] = user.CheckIns
+			userResponse["qr_code"] = user.QRCode
 
 			// Include other fields as needed
 			usersResponse = append(usersResponse, userResponse)
