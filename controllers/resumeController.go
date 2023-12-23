@@ -18,6 +18,7 @@ import (
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"gorm.io/gorm"
 )
 
 func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
@@ -293,11 +294,18 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeHash = computedHash
 	application.ResumeFilename = file.Filename
 	user.ResumeUpdateCount += 1
-	result := initializers.DB.Save(&application)
-
-	if result.Error != nil {
+	result  := initializers.DB.Transaction(func(tx *gorm.DB) error {
+		if appErr := tx.Save(&application).Error; appErr != nil {
+			return appErr
+		}
+		if userErr := tx.Save(&user).Error; userErr != nil {
+			return userErr
+		}
+		return nil
+	})
+	if result != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", err)
+		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", result)
 		return
 	}
 
