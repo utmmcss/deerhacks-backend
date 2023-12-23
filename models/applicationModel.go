@@ -47,7 +47,6 @@ type Application struct {
 	ResumeFilename        string `gorm:"size:128"`
 	ResumeHash            string `gorm:"size:128"`
 	ResumeExpiry          string `gorm:"size:128"`
-	ResumeUpdateCount     int
 	Portfolio             string `gorm:"size:128"`
 	Github                string `gorm:"size:128"`
 	Linkedin              string `gorm:"size:128"`

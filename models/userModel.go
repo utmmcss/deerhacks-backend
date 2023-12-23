@@ -38,6 +38,5 @@ type User struct {
 	AuthToken             string
 	RefreshToken          string
 	TokenExpiry           string
-	ResumeGetRateLimit    string
-	ResumeUpdateRateLimit string
+	ResumeUpdateCount     int
 }

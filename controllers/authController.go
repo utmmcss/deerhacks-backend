@@ -192,8 +192,7 @@ func Login(c *gin.Context) {
 			AuthToken:             details.AccessToken,
 			RefreshToken:          details.RefreshToken,
 			TokenExpiry:           expiry.Format(time.RFC3339),
-			ResumeGetRateLimit:    time.Now().Format(time.RFC3339),
-			ResumeUpdateRateLimit: time.Now().Format(time.RFC3339),
+			ResumeUpdateCount:     0,
 		}
 
 		result := initializers.DB.Create(&user)

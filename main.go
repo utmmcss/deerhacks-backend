@@ -40,7 +40,7 @@ func main() {
 	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 
 	r.GET("/resume-get", middleware.RequireAuth, controllers.GetResume)
-	r.POST("/resume-update", middleware.RequireAuth, controllers.UpdateResume)
+	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
 
 	r.Run()
 
