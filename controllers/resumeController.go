@@ -21,7 +21,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
+func getPresignedURL(svc *s3.S3, filepath string, filename string) (string, error) {
 
 	// Decide which folder to use based on app environment
 
@@ -41,8 +41,10 @@ func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
 
 	// Get the file and return it
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String("dhapplications"),
-		Key:    aws.String(filepath),
+		Bucket:                     aws.String("dhapplications"),
+		Key:                        aws.String(filepath),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("inline; filename=\"%s\"", filename)),
+		ResponseContentType:        aws.String("application/pdf"),
 	})
 
 	// URL is valid for 7 hours
@@ -84,7 +86,7 @@ func GetResume(c *gin.Context) {
 	if !passed {
 		c.JSON(http.StatusOK, gin.H{
 			"resume_file_name":    application.ResumeFilename,
-			"resume_link":        application.ResumeLink,
+			"resume_link":         application.ResumeLink,
 			"resume_update_count": user.ResumeUpdateCount,
 		})
 		return
@@ -105,7 +107,7 @@ func GetResume(c *gin.Context) {
 	svc := s3.New(sess)
 	filepath := user.DiscordId + "/" + user.FirstName + "_" + "Resume.pdf"
 
-	presigned_url, err := getPresignedURL(svc, filepath)
+	presigned_url, err := getPresignedURL(svc, filepath, application.ResumeFilename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -128,7 +130,7 @@ func GetResume(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"resume_file_name":    application.ResumeFilename,
-		"resume_link":        application.ResumeLink,
+		"resume_link":         application.ResumeLink,
 		"resume_update_count": user.ResumeUpdateCount,
 	})
 }
@@ -290,7 +292,7 @@ func UpdateResume(c *gin.Context) {
 
 	// Get presigned url
 	filepath = user.DiscordId + "/" + filename
-	presigned_url, err := getPresignedURL(svc, filepath)
+	presigned_url, err := getPresignedURL(svc, filepath, file.Filename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -303,7 +305,7 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeHash = computedHash
 	application.ResumeFilename = file.Filename
 	user.ResumeUpdateCount += 1
-	result  := initializers.DB.Transaction(func(tx *gorm.DB) error {
+	result := initializers.DB.Transaction(func(tx *gorm.DB) error {
 		if appErr := tx.Save(&application).Error; appErr != nil {
 			return appErr
 		}
@@ -322,7 +324,7 @@ func UpdateResume(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"resume_file_name":    file.Filename,
-		"resume_link":        application.ResumeLink,
+		"resume_link":         application.ResumeLink,
 		"resume_update_count": user.ResumeUpdateCount,
 	})
 
