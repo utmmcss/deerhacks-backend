@@ -178,7 +178,7 @@ func UpdateResume(c *gin.Context) {
 
 	// Force file name to be a certain name
 	// Ensures files are overwritten in S3
-	filename = user.FirstName + "_" + "Resume.pdf"
+	filename = "Resume.pdf"
 
 	var application models.Application
 	initializers.DB.First(&application, "discord_id = ?", user.DiscordId)
