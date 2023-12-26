@@ -101,7 +101,7 @@ func GetResume(c *gin.Context) {
 	}
 
 	svc := s3.New(sess)
-	filepath := user.DiscordId + "/" + user.FirstName + "_" + "Resume.pdf"
+	filepath := user.DiscordId + "/Resume.pdf"
 
 	presigned_url, err := getPresignedURL(svc, filepath)
 
