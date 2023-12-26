@@ -18,6 +18,7 @@ import (
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"gorm.io/gorm"
 )
 
 func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
@@ -79,11 +80,12 @@ func GetResume(c *gin.Context) {
 		return
 	}
 
-	// If expiry has not arrived yet, return link and filename
+	// If expiry has not arrived yet, return link and filename along with resume update count
 	if !passed {
 		c.JSON(http.StatusOK, gin.H{
-			"resumeFileName": application.ResumeFilename,
-			"resumeLink":     application.ResumeLink,
+			"resumeFileName":    application.ResumeFilename,
+			"resumeLink":        application.ResumeLink,
+			"resumeUpdateCount": user.ResumeUpdateCount,
 		})
 		return
 	}
@@ -125,8 +127,9 @@ func GetResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
-		"resumeLink":     application.ResumeLink,
+		"resumeFileName":    application.ResumeFilename,
+		"resumeLink":        application.ResumeLink,
+		"resumeUpdateCount": user.ResumeUpdateCount,
 	})
 }
 
@@ -290,19 +293,28 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
 	application.ResumeHash = computedHash
 	application.ResumeFilename = file.Filename
-	result := initializers.DB.Save(&application)
-
-	if result.Error != nil {
+	user.ResumeUpdateCount += 1
+	result  := initializers.DB.Transaction(func(tx *gorm.DB) error {
+		if appErr := tx.Save(&application).Error; appErr != nil {
+			return appErr
+		}
+		if userErr := tx.Save(&user).Error; userErr != nil {
+			return userErr
+		}
+		return nil
+	})
+	if result != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", err)
+		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", result)
 		return
 	}
 
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": file.Filename,
-		"resumeLink":     application.ResumeLink,
+		"resumeFileName":    file.Filename,
+		"resumeLink":        application.ResumeLink,
+		"resumeUpdateCount": user.ResumeUpdateCount,
 	})
 
 }
