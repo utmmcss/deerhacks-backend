@@ -20,24 +20,27 @@ import (
 	"github.com/utmmcss/deerhacks-backend/models"
 )
 
-func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
+// rename file to specific name
+// ensures files are overwritten in S3
+const persistentFileName = "Resume.pdf"
 
-	// Decide which folder to use based on app environment
-
+func constructS3Key(discordId string) (string, error) {
 	appEnv := os.Getenv("APP_ENV")
 
 	folderName := ""
-
 	if appEnv == "development" {
 		folderName = "dev"
 	} else if appEnv == "production" {
 		folderName = "prod"
 	} else {
-		return "", fmt.Errorf("getPresignedURL - folder not defined for current appEnv")
+		return "", fmt.Errorf("constructS3Key - environment not defined for current appEnv")
 	}
 
-	filepath = folderName + "/" + filepath
+	filepath := folderName + "/" + discordId + "/" + persistentFileName
+	return filepath, nil
+}
 
+func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
 	// Get the file and return it
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
 		Bucket: aws.String("dhapplications"),
@@ -101,9 +104,15 @@ func GetResume(c *gin.Context) {
 	}
 
 	svc := s3.New(sess)
-	filepath := user.DiscordId + "/Resume.pdf"
 
-	presigned_url, err := getPresignedURL(svc, filepath)
+	s3key, err := constructS3Key(user.DiscordId)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("GetResume - environment not defined for current appEnv", err)
+		return
+	}
+
+	presigned_url, err := getPresignedURL(svc, s3key)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -252,29 +261,17 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
-	// Upload to user bucket using their discord ID
-	// Make sure to change folder depending on app_env
-
-	appEnv := os.Getenv("APP_ENV")
-
-	folderName := ""
-
-	if appEnv == "development" {
-		folderName = "dev"
-	} else if appEnv == "production" {
-		folderName = "prod"
-	} else {
+	s3key, err := constructS3Key(user.DiscordId)
+	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Could not identify valid appEnv for folder: ", err)
+		fmt.Println("GetResume - environment not defined for current appEnv", err)
 		return
 	}
-
-	filepath := folderName + "/" + user.DiscordId + "/" + filename
 
 	// Upload the file
 	_, err = svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String("dhapplications"),
-		Key:    aws.String(filepath),
+		Key:    aws.String(s3key),
 		Body:   bytes.NewReader(fileData),
 	})
 	if err != nil {
@@ -284,8 +281,7 @@ func UpdateResume(c *gin.Context) {
 	}
 
 	// Get presigned url
-	filepath = user.DiscordId + "/" + filename
-	presigned_url, err := getPresignedURL(svc, filepath)
+	presigned_url, err := getPresignedURL(svc, s3key)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
