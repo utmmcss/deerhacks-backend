@@ -257,7 +257,7 @@ func UpdateResume(c *gin.Context) {
 	// a (weak) check to see if uploaded file contains JavaScript
 	if bytes.Contains(fileData, []byte("/JS")) {
 		c.AbortWithStatus(http.StatusBadRequest)
-		fmt.Println("UpdateResume - Resume with JavaScript uploaded by user with discord_id", user.DiscordId)
+		fmt.Println("UpdateResume - Upload of resume with JavaScript attempted by user with discord_id", user.DiscordId)
 		return
 	}
 
