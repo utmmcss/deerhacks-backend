@@ -31,6 +31,9 @@ func main() {
 	}
 	r.Use(cors.New(config))
 
+	r.ForwardedByClientIP = false
+	r.SetTrustedProxies(nil)
+
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
@@ -43,7 +46,4 @@ func main() {
 	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
 
 	r.Run()
-
-	// r.ForwardedByClientIP = true
-	r.SetTrustedProxies([]string{"127.0.0.1"})
 }
