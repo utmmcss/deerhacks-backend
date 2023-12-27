@@ -36,8 +36,11 @@ func main() {
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
+	r.POST("/user-logout", middleware.RequireAuth, controllers.LogoutUser)
+
 	r.POST("/qr-check-in", middleware.RequireAuth, controllers.AdminQRCheckIn)
 	r.POST("/admin-user-update", middleware.RequireAuth, controllers.UpdateAdmin)
+
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
 	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 

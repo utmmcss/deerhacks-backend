@@ -4,12 +4,25 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
+
+func LogoutUser(c *gin.Context) {
+
+	domain := "localhost"
+
+	if os.Getenv("APP_ENV") != "development" {
+		domain = "deerhacks.ca"
+	}
+
+	c.SetCookie("Authorization", "", 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
+	c.JSON(http.StatusOK, gin.H{})
+}
 
 func GetUser(c *gin.Context) {
 

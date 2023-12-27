@@ -251,6 +251,6 @@ func Login(c *gin.Context) {
 		domain = "deerhacks.ca"
 	}
 
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", false)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
 	c.JSON(http.StatusOK, gin.H{})
 }
