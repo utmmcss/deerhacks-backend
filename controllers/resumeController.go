@@ -245,6 +245,13 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
+	// a (weak) check to see if uploaded file contains JavaScript
+	if bytes.Contains(fileData, []byte("/JS")) {
+		c.AbortWithStatus(http.StatusBadRequest)
+		fmt.Println("UpdateResume - Resume with JavaScript uploaded by user with discord_id", user.DiscordId)
+		return
+	}
+
 	// Upload to user bucket using their discord ID
 	// Make sure to change folder depending on app_env
 
