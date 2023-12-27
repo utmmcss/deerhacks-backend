@@ -223,18 +223,6 @@ func GetUserList(c *gin.Context) {
 		for _, userApp := range userApplications {
 			userResponse := make(map[string]interface{})
 
-			// var ethnicity = []string{}
-			// var dietRestriction = []string{}
-			// var deerhacksExperience = []string{}
-			// var interests = []string{}
-
-			// userApp.Ethnicity.AssignTo(&ethnicity)
-			// application.DietRestriction.AssignTo(&dietRestriction)
-			// application.DeerhacksExperience.AssignTo(&deerhacksExperience)
-			// application.Interests.AssignTo(&interests)
-
-			// Include fields from the User struct
-			// userResponse["id"] = userApp.ID
 			userResponse["first_name"] = userApp.FirstName
 			userResponse["last_name"] = userApp.LastName
 			userResponse["username"] = userApp.Username
@@ -246,7 +234,7 @@ func GetUserList(c *gin.Context) {
 			userResponse["qr_code"] = userApp.QRCode
 
 			appResponse := helpers.ToApplicationResponse(userApp.Application)
-			// Flatten the application response data into userResponse
+
 			userResponse["is_draft"] = appResponse.IsDraft
 			userResponse["application"] = appResponse.Application
 
@@ -268,7 +256,6 @@ func GetUserList(c *gin.Context) {
 			userResponse["check_ins"] = user.CheckIns
 			userResponse["qr_code"] = user.QRCode
 
-			// Include other fields as needed
 			usersResponse = append(usersResponse, userResponse)
 		}
 	}
