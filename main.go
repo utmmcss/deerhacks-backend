@@ -12,7 +12,9 @@ import (
 
 // This function runs before main
 func init() {
-	initializers.LoadEnvVariables()
+	if os.Getenv("APP_ENV") != "production" {
+		initializers.LoadEnvVariables()
+	}
 	initializers.ConnectToDB()
 	initializers.SyncDatabase()
 }
