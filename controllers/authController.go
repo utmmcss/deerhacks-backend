@@ -184,15 +184,15 @@ func Login(c *gin.Context) {
 	if user.ID == 0 {
 
 		user = models.User{
-			DiscordId:             userDetails.ID,
-			Avatar:                userDetails.Avatar,
-			Username:              userDetails.Username,
-			Email:                 userDetails.Email,
-			QRCode:                uuid.New().String(),
-			AuthToken:             details.AccessToken,
-			RefreshToken:          details.RefreshToken,
-			TokenExpiry:           expiry.Format(time.RFC3339),
-			ResumeUpdateCount:     0,
+			DiscordId:         userDetails.ID,
+			Avatar:            userDetails.Avatar,
+			Username:          userDetails.Username,
+			Email:             userDetails.Email,
+			QRCode:            uuid.New().String(),
+			AuthToken:         details.AccessToken,
+			RefreshToken:      details.RefreshToken,
+			TokenExpiry:       expiry.Format(time.RFC3339),
+			ResumeUpdateCount: 0,
 		}
 
 		result := initializers.DB.Create(&user)
@@ -251,6 +251,6 @@ func Login(c *gin.Context) {
 		domain = "deerhacks.ca"
 	}
 
-	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
+	c.SetCookie("Authorization", tokenString, 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", false)
 	c.JSON(http.StatusOK, gin.H{})
 }
