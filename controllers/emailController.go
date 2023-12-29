@@ -229,36 +229,73 @@ func VerifyEmail(c *gin.Context) {
 		return
 	}
 
+	// Attempt to find token
+	// If not discovered return invalid
+
 	var matchingEntry models.UserEmailContext
 	initializers.DB.First(&matchingEntry, "token = ?", body.Token)
 
 	if matchingEntry.ID == 0 {
+		fmt.Println("VerifyEmail - Could not find token given in body")
 		c.JSON(http.StatusBadRequest, gin.H{
-			"status": "invalid",
+			"status":  "invalid",
+			"context": "invalid",
 		})
-
 		return
 	}
+	// If the token is expired return invalid
+	has_time_passed, err := helpers.HasTimePassed(matchingEntry.TokenExpiry)
+
+	if err != nil {
+		fmt.Println("VerifyEmail - Calling HasTimePassed failed:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "invalid",
+			"context": "invalid",
+		})
+		return
+	}
+
+	if has_time_passed {
+		fmt.Println("VerifyEmail - Token expired")
+		c.JSON(http.StatusGone, gin.H{
+			"status":  "expired",
+			"context": matchingEntry.Context,
+		})
+		return
+	}
+
+	// Update User Status and Email
 
 	var user models.User
 	initializers.DB.First(&user, "discord_id = ?", matchingEntry.DiscordId)
 
 	if user.ID == 0 {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("VerifyEmail - Failed to get user data")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "invalid",
+			"context": "invalid",
+		})
 		return
 	}
 
 	user.Status = models.Status(matchingEntry.StatusChange)
 	user.Email = matchingEntry.Email
-	err := initializers.DB.Save(&user).Error
+	err = initializers.DB.Save(&user).Error
 
 	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("VerifyEmail - Failed to save user data")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  "invalid",
+			"context": "invalid",
+		})
 		return
 	}
 
+	fmt.Println("VerifyEmail - Verification succeded for User", user.ID)
+
 	c.JSON(http.StatusOK, gin.H{
-		"status": matchingEntry.Context,
+		"status":  "success",
+		"context": matchingEntry.Context,
 	})
 
 	err = initializers.DB.Delete(matchingEntry).Error
