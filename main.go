@@ -34,13 +34,11 @@ func main() {
 	}
 	r.Use(cors.New(config))
 
-<<<<<<< HEAD
 	r.ForwardedByClientIP = false
 	r.SetTrustedProxies(nil)
-=======
+	
 	// Start email cleanup task
 	go controllers.CleanupTableTask(24 * time.Hour)
->>>>>>> main
 
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
