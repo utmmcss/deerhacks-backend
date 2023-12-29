@@ -151,12 +151,7 @@ func SendOutboundEmail(email string, html_content string, text_content string, s
 
 }
 
-func SetupOutboundEmail(user *models.User, new_email string, context string) {
-
-	// Exit if new email isnt defined
-	if new_email == "" {
-		return
-	}
+func SetupOutboundEmail(user *models.User, context string) {
 
 	// Status change configuration
 	var status_change = ""
@@ -180,7 +175,6 @@ func SetupOutboundEmail(user *models.User, new_email string, context string) {
 
 		entry = models.UserEmailContext{
 			DiscordId:    user.DiscordId,
-			Email:        new_email,
 			Token:        uuid.New().String(),
 			TokenExpiry:  expiry.Format(time.RFC3339),
 			Context:      context,
@@ -195,7 +189,6 @@ func SetupOutboundEmail(user *models.User, new_email string, context string) {
 		}
 	} else {
 		// Overwrite previous email verification with new one
-		entry.Email = new_email
 		entry.Token = uuid.New().String()
 		entry.TokenExpiry = expiry.Format(time.RFC3339)
 		err := initializers.DB.Save(&entry).Error
@@ -209,7 +202,7 @@ func SetupOutboundEmail(user *models.User, new_email string, context string) {
 	subject, formattedStringHTML, formattedStringTEXT, err := getTemplateData(context, user, &entry)
 
 	if err == nil {
-		SendOutboundEmail(new_email, formattedStringHTML, formattedStringTEXT, subject, user.FirstName+" "+user.LastName)
+		SendOutboundEmail(user.Email, formattedStringHTML, formattedStringTEXT, subject, user.FirstName+" "+user.LastName)
 	}
 
 }
@@ -279,7 +272,6 @@ func VerifyEmail(c *gin.Context) {
 	}
 
 	user.Status = models.Status(matchingEntry.StatusChange)
-	user.Email = matchingEntry.Email
 	err = initializers.DB.Save(&user).Error
 
 	if err != nil {

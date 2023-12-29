@@ -82,7 +82,6 @@ func UpdateUser(c *gin.Context) {
 
 	var isUserChanged bool = false
 	var isEmailChanged bool = false
-	var new_email string = ""
 
 	// Update the user object with the new information (if applicable)
 	if bodyData.FirstName != "" && bodyData.FirstName != user.FirstName {
@@ -110,8 +109,8 @@ func UpdateUser(c *gin.Context) {
 			})
 			return
 		}
-		new_email = email
 		user.EmailChangeCount += 1
+		user.Email = email
 		isEmailChanged = true
 
 		if user.Status == models.Registering {
@@ -155,7 +154,7 @@ func UpdateUser(c *gin.Context) {
 			})
 		}
 
-		go SetupOutboundEmail(&user, new_email, "signup")
+		go SetupOutboundEmail(&user, "signup")
 
 	}
 
