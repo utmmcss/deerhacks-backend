@@ -94,15 +94,15 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 
 		buttonToURL := fmt.Sprintf(buttonHTMLTemplate, url)
 
-		formattedStringHTML := fmt.Sprintf("Dear %s,<br><br>"+
+		formattedStringHTML := fmt.Sprintf("Deer %s,<br><br>"+
 			"Thanks for creating an account with us at DeerHacks!<br><br>"+
-			"Please click the button below or this link directly: %s to verify your email. The link will expire within 24 hours of receiving this email.<br>"+
+			"Please click the button below or this link directly: %s to verify your email. The link will expire within 24 hours of receiving this email.<br><br>"+
 			"%s<br><br>"+ // Using the button HTML here
 			"Happy Hacking,<br><br>"+
 			"DeerHacks Team 🦌",
 			first_name, url, buttonToURL)
 
-		formattedStringTEXT := fmt.Sprintf("Dear %s,\n\n"+
+		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
 			"Thanks for creating an account with us at DeerHacks!\n\n"+
 			"Please click the link below to verify your email. The link will expire within 24 hours of receiving this email.\n\n"+
 			"%s\n\n"+ // Using the button HTML here
@@ -298,10 +298,10 @@ func VerifyEmail(c *gin.Context) {
 		"context": matchingEntry.Context,
 	})
 
-	err = initializers.DB.Delete(matchingEntry).Error
+	err = initializers.DB.Delete(&matchingEntry).Error
 
 	if err != nil {
-		fmt.Printf("VerifyEmail - An error occured when trying to delete an entry")
+		fmt.Printf("VerifyEmail - An error occured when trying to delete an entry:", err)
 	}
 
 }

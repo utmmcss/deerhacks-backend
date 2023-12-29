@@ -1,9 +1,7 @@
 package controllers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 
@@ -55,9 +53,9 @@ func GetUser(c *gin.Context) {
 func UpdateUser(c *gin.Context) {
 
 	type UpdateUserBody struct {
-		FirstName string `json:"first_name,omitempty"`
-		LastName  string `json:"last_name,omitempty"`
-		Email     string `json:"email,omitempty"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+		Email     string `json:"email"`
 	}
 
 	userObj, _ := c.Get("user")
@@ -72,23 +70,10 @@ func UpdateUser(c *gin.Context) {
 		return
 	}
 
-	// Get the request body
-	bodyObj, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid Request Body",
-		})
-		return
-	}
-	defer c.Request.Body.Close()
+	var bodyData UpdateUserBody
 
-	// Defaults to user values
-	bodyData := UpdateUserBody{
-		FirstName: user.FirstName,
-		LastName:  user.LastName,
-		Email:     user.Email,
-	}
-	if json.Unmarshal(bodyObj, &bodyData) != nil {
+	// Bind JSON to bodyData
+	if err := c.Bind(&bodyData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid Request Body",
 		})
@@ -98,18 +83,19 @@ func UpdateUser(c *gin.Context) {
 	var isUserChanged bool = false
 	var isEmailChanged bool = false
 	var new_email string = ""
+
 	// Update the user object with the new information (if applicable)
-	if bodyData.FirstName != user.FirstName {
+	if bodyData.FirstName != "" && bodyData.FirstName != user.FirstName {
 		user.FirstName = bodyData.FirstName
 		isUserChanged = true
 	}
 
-	if bodyData.LastName != user.LastName {
+	if bodyData.LastName != "" && bodyData.LastName != user.LastName {
 		user.LastName = bodyData.LastName
 		isUserChanged = true
 	}
 
-	if bodyData.Email != user.Email {
+	if bodyData.Email != "" && (user.Status == models.Pending || (user.Status == models.Registering && bodyData.Email != user.Email)) {
 		email, err := helpers.GetValidEmail(bodyData.Email)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -140,10 +126,10 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	// Save the updated user object to the database
-	err = initializers.DB.Save(&user).Error
-	if err != nil {
+	dberr := initializers.DB.Save(&user).Error
+	if dberr != nil {
 
-		if helpers.IsUniqueViolationError(err) {
+		if helpers.IsUniqueViolationError(dberr) {
 			c.JSON(http.StatusConflict, gin.H{
 				"error": "Email already in use",
 			})
