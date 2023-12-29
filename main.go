@@ -34,6 +34,9 @@ func main() {
 	}
 	r.Use(cors.New(config))
 
+	r.ForwardedByClientIP = false
+	r.SetTrustedProxies(nil)
+	
 	// Start email cleanup task
 	go controllers.CleanupTableTask(24 * time.Hour)
 
@@ -53,7 +56,4 @@ func main() {
 	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
 
 	r.Run()
-
-	// r.ForwardedByClientIP = true
-	r.SetTrustedProxies([]string{"127.0.0.1"})
 }
