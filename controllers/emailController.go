@@ -130,7 +130,7 @@ func SendOutboundEmail(email string, html_content string, text_content string, s
 	email_template := brevo.SendSmtpEmail{
 		Sender: &brevo.SendSmtpEmailSender{
 			Email: "no-reply@deerhacks.ca", // Replace with your sender email
-			Name:  "Deerhacks",
+			Name:  "DeerHacks",
 		},
 		To: []brevo.SendSmtpEmailTo{{
 			Email: email,
