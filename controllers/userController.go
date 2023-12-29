@@ -2,14 +2,28 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
+
+func LogoutUser(c *gin.Context) {
+
+	domain := "localhost"
+
+	if os.Getenv("APP_ENV") != "development" {
+		domain = "deerhacks.ca"
+	}
+
+	c.SetCookie("Authorization", "", 3600*24*30, "", domain, os.Getenv("APP_ENV") != "development", true)
+	c.JSON(http.StatusOK, gin.H{})
+}
 
 func GetUser(c *gin.Context) {
 
@@ -82,6 +96,8 @@ func UpdateUser(c *gin.Context) {
 	}
 
 	var isUserChanged bool = false
+	var isEmailChanged bool = false
+	var new_email string = ""
 	// Update the user object with the new information (if applicable)
 	if bodyData.FirstName != user.FirstName {
 		user.FirstName = bodyData.FirstName
@@ -101,7 +117,17 @@ func UpdateUser(c *gin.Context) {
 			})
 			return
 		}
-		user.Email = email
+
+		if user.EmailChangeCount >= 20 {
+			c.JSON(http.StatusTooManyRequests, gin.H{
+				"error": "Exceeded daily limit of email changes",
+			})
+			return
+		}
+		new_email = email
+		user.EmailChangeCount += 1
+		isEmailChanged = true
+
 		if user.Status == models.Registering {
 			user.Status = models.Pending
 		}
@@ -128,6 +154,23 @@ func UpdateUser(c *gin.Context) {
 			"error": "Failed to update user",
 		})
 		return
+	}
+
+	if isEmailChanged {
+
+		if user.EmailChangeCount == 20 {
+
+			go helpers.ScheduleTaskNextDay(func() {
+				err := initializers.DB.Model(&models.User{}).Where("id = ?", user.ID).Update("email_change_count", 0).Error
+
+				if err != nil {
+					fmt.Printf("Failed to update Email Change Count back to 0")
+				}
+			})
+		}
+
+		go SetupOutboundEmail(&user, new_email, "signup")
+
 	}
 
 	c.JSON(http.StatusOK, gin.H{})

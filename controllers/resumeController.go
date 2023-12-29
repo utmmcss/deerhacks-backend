@@ -18,6 +18,7 @@ import (
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"gorm.io/gorm"
 )
 
 // rename file to specific name
@@ -40,11 +41,13 @@ func constructS3Key(discordId string) (string, error) {
 	return filepath, nil
 }
 
-func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
+func getPresignedURL(svc *s3.S3, filepath string, filename string) (string, error) {
 	// Get the file and return it
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String("dhapplications"),
-		Key:    aws.String(filepath),
+		Bucket:                     aws.String("dhapplications"),
+		Key:                        aws.String(filepath),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("inline; filename=\"%s\"", filename)),
+		ResponseContentType:        aws.String("application/pdf"),
 	})
 
 	// URL is valid for 7 hours
@@ -68,7 +71,7 @@ func GetResume(c *gin.Context) {
 
 	// If the application or resume link does not exist return empty response
 	if application.ID == 0 || application.ResumeLink == "" {
-		c.AbortWithStatus(http.StatusOK)
+		c.JSON(http.StatusOK, gin.H{})
 		fmt.Println("GetResume - Application or Resume Link does not exist")
 		return
 	}
@@ -82,11 +85,12 @@ func GetResume(c *gin.Context) {
 		return
 	}
 
-	// If expiry has not arrived yet, return link and filename
+	// If expiry has not arrived yet, return link and filename along with resume update count
 	if !passed {
 		c.JSON(http.StatusOK, gin.H{
-			"resumeFileName": application.ResumeFilename,
-			"resumeLink":     application.ResumeLink,
+			"resume_file_name":    application.ResumeFilename,
+			"resume_link":         application.ResumeLink,
+			"resume_update_count": user.ResumeUpdateCount,
 		})
 		return
 	}
@@ -112,7 +116,7 @@ func GetResume(c *gin.Context) {
 		return
 	}
 
-	presigned_url, err := getPresignedURL(svc, s3key)
+	presigned_url, err := getPresignedURL(svc, s3key, application.ResumeFilename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -134,19 +138,23 @@ func GetResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
-		"resumeLink":     application.ResumeLink,
+		"resume_file_name":    application.ResumeFilename,
+		"resume_link":         application.ResumeLink,
+		"resume_update_count": user.ResumeUpdateCount,
 	})
 }
 
 func UpdateResume(c *gin.Context) {
 
-	// Retrieve the file from the posted form-data
-	file, err := c.FormFile("file")
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
 
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		fmt.Println("UpdateResume - No file provided")
+	// If user is not registering, return error
+	// Admins can update resumes at any time
+	if (user.Status != models.Registering) && user.Status != models.Admin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "User is not allowed to update resume at this time",
+		})
 		return
 	}
 
@@ -162,6 +170,15 @@ func UpdateResume(c *gin.Context) {
 	if !isOpen {
 		c.AbortWithStatus(http.StatusForbidden)
 		fmt.Println("UpdateResume - Registration is closed")
+		return
+	}
+
+	// Retrieve the file from the posted form-data
+	file, err := c.FormFile("file")
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		fmt.Println("UpdateResume - No file provided")
 		return
 	}
 
@@ -181,9 +198,6 @@ func UpdateResume(c *gin.Context) {
 		fmt.Println("UpdateResume - File not supported")
 		return
 	}
-
-	userObj, _ := c.Get("user")
-	user := userObj.(models.User)
 
 	// Force file name to be a certain name
 	// Ensures files are overwritten in S3
@@ -281,7 +295,7 @@ func UpdateResume(c *gin.Context) {
 	}
 
 	// Get presigned url
-	presigned_url, err := getPresignedURL(svc, s3key)
+	presigned_url, err := getPresignedURL(svc, s3key, file.Filename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -293,19 +307,28 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
 	application.ResumeHash = computedHash
 	application.ResumeFilename = file.Filename
-	result := initializers.DB.Save(&application)
-
-	if result.Error != nil {
+	user.ResumeUpdateCount += 1
+	result := initializers.DB.Transaction(func(tx *gorm.DB) error {
+		if appErr := tx.Save(&application).Error; appErr != nil {
+			return appErr
+		}
+		if userErr := tx.Save(&user).Error; userErr != nil {
+			return userErr
+		}
+		return nil
+	})
+	if result != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", err)
+		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", result)
 		return
 	}
 
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": file.Filename,
-		"resumeLink":     application.ResumeLink,
+		"resume_file_name":    file.Filename,
+		"resume_link":         application.ResumeLink,
+		"resume_update_count": user.ResumeUpdateCount,
 	})
 
 }
