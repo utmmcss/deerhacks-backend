@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -33,10 +34,14 @@ func main() {
 	}
 	r.Use(cors.New(config))
 
+	// Start email cleanup task
+	go controllers.CleanupTableTask(24 * time.Hour)
+
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
 	r.POST("/user-logout", middleware.RequireAuth, controllers.LogoutUser)
+	r.POST("/email-verify", controllers.VerifyEmail)
 
 	r.POST("/qr-check-in", middleware.RequireAuth, controllers.AdminQRCheckIn)
 	r.POST("/admin-user-update", middleware.RequireAuth, controllers.UpdateAdmin)
