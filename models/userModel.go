@@ -24,19 +24,20 @@ const (
 
 type User struct {
 	gorm.Model
-	DiscordId             string `gorm:"unique"`
-	Avatar                string
-	FirstName             string `gorm:"size:128"`
-	LastName              string `gorm:"size:128"`
-	Username              string `gorm:"size:128"`
-	Email                 string `gorm:"unique;size:128"`
-	Status                Status `gorm:"default:pending"`
-	QRCode                string `gorm:"unique"`
-	InternalStatus        string
-	InternalNotes         string
-	CheckIns              json.RawMessage `gorm:"type:jsonb"`
-	AuthToken             string
-	RefreshToken          string
-	TokenExpiry           string
-	ResumeUpdateCount     int
+	DiscordId         string `gorm:"unique"`
+	Avatar            string
+	FirstName         string `gorm:"size:128"`
+	LastName          string `gorm:"size:128"`
+	Username          string `gorm:"size:128"`
+	Email             string `gorm:"unique;size:128"`
+	Status            Status `gorm:"default:pending"`
+	QRCode            string `gorm:"unique"`
+	InternalStatus    string
+	InternalNotes     string
+	CheckIns          json.RawMessage `gorm:"type:jsonb"`
+	AuthToken         string
+	RefreshToken      string
+	TokenExpiry       string
+	ResumeUpdateCount int
+	EmailChangeCount  int `gorm:"default:0"`
 }
