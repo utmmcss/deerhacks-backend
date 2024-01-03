@@ -184,16 +184,15 @@ func Login(c *gin.Context) {
 	if user.ID == 0 {
 
 		user = models.User{
-			DiscordId:             userDetails.ID,
-			Avatar:                userDetails.Avatar,
-			Username:              userDetails.Username,
-			Email:                 userDetails.Email,
-			QRCode:                uuid.New().String(),
-			AuthToken:             details.AccessToken,
-			RefreshToken:          details.RefreshToken,
-			TokenExpiry:           expiry.Format(time.RFC3339),
-			ResumeGetRateLimit:    time.Now().Format(time.RFC3339),
-			ResumeUpdateRateLimit: time.Now().Format(time.RFC3339),
+			DiscordId:         userDetails.ID,
+			Avatar:            userDetails.Avatar,
+			Username:          userDetails.Username,
+			Email:             userDetails.Email,
+			QRCode:            uuid.New().String(),
+			AuthToken:         details.AccessToken,
+			RefreshToken:      details.RefreshToken,
+			TokenExpiry:       expiry.Format(time.RFC3339),
+			ResumeUpdateCount: 0,
 		}
 
 		result := initializers.DB.Create(&user)

@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -12,7 +13,9 @@ import (
 
 // This function runs before main
 func init() {
-	initializers.LoadEnvVariables()
+	if os.Getenv("APP_ENV") != "production" {
+		initializers.LoadEnvVariables()
+	}
 	initializers.ConnectToDB()
 	initializers.SyncDatabase()
 }
@@ -31,19 +34,27 @@ func main() {
 	}
 	r.Use(cors.New(config))
 
+	r.ForwardedByClientIP = false
+	r.SetTrustedProxies(nil)
+	
+	// Start email cleanup task
+	go controllers.CleanupTableTask(24 * time.Hour)
+
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
+	r.POST("/user-logout", middleware.RequireAuth, controllers.LogoutUser)
+	r.POST("/email-verify", controllers.VerifyEmail)
+
+	r.POST("/qr-check-in", middleware.RequireAuth, controllers.AdminQRCheckIn)
 	r.POST("/admin-user-update", middleware.RequireAuth, controllers.UpdateAdmin)
+
 	r.GET("/application-get", middleware.RequireAuth, controllers.GetApplicaton)
 	r.POST("/application-update", middleware.RequireAuth, controllers.UpdateApplication)
 
-	r.GET("/resume-get", middleware.RequireAuth, middleware.ResumeGetRateLimit, controllers.GetResume)
+	r.GET("/resume-get", middleware.RequireAuth, controllers.GetResume)
 	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
 
 	r.GET("/user-list", middleware.RequireAuth, controllers.GetUserList)
 	r.Run()
-
-	// r.ForwardedByClientIP = true
-	r.SetTrustedProxies([]string{"127.0.0.1"})
 }

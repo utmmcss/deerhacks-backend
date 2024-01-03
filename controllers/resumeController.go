@@ -18,30 +18,36 @@ import (
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
+	"gorm.io/gorm"
 )
 
-func getPresignedURL(svc *s3.S3, filepath string) (string, error) {
+// rename file to specific name
+// ensures files are overwritten in S3
+const persistentFileName = "Resume.pdf"
 
-	// Decide which folder to use based on app environment
-
+func constructS3Key(discordId string) (string, error) {
 	appEnv := os.Getenv("APP_ENV")
 
 	folderName := ""
-
 	if appEnv == "development" {
 		folderName = "dev"
 	} else if appEnv == "production" {
 		folderName = "prod"
 	} else {
-		return "", fmt.Errorf("getPresignedURL - folder not defined for current appEnv")
+		return "", fmt.Errorf("constructS3Key - environment not defined for current appEnv")
 	}
 
-	filepath = folderName + "/" + filepath
+	filepath := folderName + "/" + discordId + "/" + persistentFileName
+	return filepath, nil
+}
 
+func getPresignedURL(svc *s3.S3, filepath string, filename string) (string, error) {
 	// Get the file and return it
 	req, _ := svc.GetObjectRequest(&s3.GetObjectInput{
-		Bucket: aws.String("dhapplications"),
-		Key:    aws.String(filepath),
+		Bucket:                     aws.String("dhapplications"),
+		Key:                        aws.String(filepath),
+		ResponseContentDisposition: aws.String(fmt.Sprintf("inline; filename=\"%s\"", filename)),
+		ResponseContentType:        aws.String("application/pdf"),
 	})
 
 	// URL is valid for 7 hours
@@ -65,7 +71,7 @@ func GetResume(c *gin.Context) {
 
 	// If the application or resume link does not exist return empty response
 	if application.ID == 0 || application.ResumeLink == "" {
-		c.AbortWithStatus(http.StatusOK)
+		c.JSON(http.StatusOK, gin.H{})
 		fmt.Println("GetResume - Application or Resume Link does not exist")
 		return
 	}
@@ -79,11 +85,12 @@ func GetResume(c *gin.Context) {
 		return
 	}
 
-	// If expiry has not arrived yet, return link and filename
+	// If expiry has not arrived yet, return link and filename along with resume update count
 	if !passed {
 		c.JSON(http.StatusOK, gin.H{
-			"resumeFileName": application.ResumeFilename,
-			"resumeLink":     application.ResumeLink,
+			"resume_file_name":    application.ResumeFilename,
+			"resume_link":         application.ResumeLink,
+			"resume_update_count": user.ResumeUpdateCount,
 		})
 		return
 	}
@@ -101,9 +108,15 @@ func GetResume(c *gin.Context) {
 	}
 
 	svc := s3.New(sess)
-	filepath := user.DiscordId + "/" + application.ResumeFilename
 
-	presigned_url, err := getPresignedURL(svc, filepath)
+	s3key, err := constructS3Key(user.DiscordId)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("GetResume - environment not defined for current appEnv", err)
+		return
+	}
+
+	presigned_url, err := getPresignedURL(svc, s3key, application.ResumeFilename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -125,19 +138,23 @@ func GetResume(c *gin.Context) {
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
-		"resumeLink":     application.ResumeLink,
+		"resume_file_name":    application.ResumeFilename,
+		"resume_link":         application.ResumeLink,
+		"resume_update_count": user.ResumeUpdateCount,
 	})
 }
 
 func UpdateResume(c *gin.Context) {
 
-	// Retrieve the file from the posted form-data
-	file, err := c.FormFile("file")
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
 
-	if err != nil {
-		c.AbortWithStatus(http.StatusBadRequest)
-		fmt.Println("UpdateResume - No file provided")
+	// If user is not registering, return error
+	// Admins can update resumes at any time
+	if (user.Status != models.Registering) && user.Status != models.Admin {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "User is not allowed to update resume at this time",
+		})
 		return
 	}
 
@@ -156,13 +173,22 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
+	// Retrieve the file from the posted form-data
+	file, err := c.FormFile("file")
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusBadRequest)
+		fmt.Println("UpdateResume - No file provided")
+		return
+	}
+
 	filename := file.Filename
 	fileSizeMB := file.Size / (1024 * 1024)
 
-	// ensure size is less than 5 MB
-	if fileSizeMB > 5 {
+	// ensure size is less than 2 MB and limit file length
+	if fileSizeMB > 2 || len(filename) > 100 {
 		c.AbortWithStatus(413)
-		fmt.Println("UpdateResume - file too large")
+		fmt.Println("UpdateResume - file/filename too large")
 		return
 	}
 
@@ -173,12 +199,9 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
-	userObj, _ := c.Get("user")
-	user := userObj.(models.User)
-
 	// Force file name to be a certain name
 	// Ensures files are overwritten in S3
-	filename = user.FirstName + "_" + "Resume.pdf"
+	filename = "Resume.pdf"
 
 	var application models.Application
 	initializers.DB.First(&application, "discord_id = ?", user.DiscordId)
@@ -245,29 +268,24 @@ func UpdateResume(c *gin.Context) {
 		return
 	}
 
-	// Upload to user bucket using their discord ID
-	// Make sure to change folder depending on app_env
-
-	appEnv := os.Getenv("APP_ENV")
-
-	folderName := ""
-
-	if appEnv == "development" {
-		folderName = "dev"
-	} else if appEnv == "production" {
-		folderName = "prod"
-	} else {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Could not identify valid appEnv for folder: ", err)
+	// a (weak) check to see if uploaded file contains JavaScript
+	if bytes.Contains(fileData, []byte("/JS")) {
+		c.AbortWithStatus(http.StatusBadRequest)
+		fmt.Println("UpdateResume - Upload of resume with JavaScript attempted by user with discord_id", user.DiscordId)
 		return
 	}
 
-	filepath := folderName + "/" + user.DiscordId + "/" + filename
+	s3key, err := constructS3Key(user.DiscordId)
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("GetResume - environment not defined for current appEnv", err)
+		return
+	}
 
 	// Upload the file
 	_, err = svc.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String("dhapplications"),
-		Key:    aws.String(filepath),
+		Key:    aws.String(s3key),
 		Body:   bytes.NewReader(fileData),
 	})
 	if err != nil {
@@ -277,8 +295,7 @@ func UpdateResume(c *gin.Context) {
 	}
 
 	// Get presigned url
-	filepath = user.DiscordId + "/" + filename
-	presigned_url, err := getPresignedURL(svc, filepath)
+	presigned_url, err := getPresignedURL(svc, s3key, file.Filename)
 
 	if err != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
@@ -289,20 +306,29 @@ func UpdateResume(c *gin.Context) {
 	application.ResumeLink = presigned_url
 	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
 	application.ResumeHash = computedHash
-	application.ResumeFilename = filename
-	result := initializers.DB.Save(&application)
-
-	if result.Error != nil {
+	application.ResumeFilename = file.Filename
+	user.ResumeUpdateCount += 1
+	result := initializers.DB.Transaction(func(tx *gorm.DB) error {
+		if appErr := tx.Save(&application).Error; appErr != nil {
+			return appErr
+		}
+		if userErr := tx.Save(&user).Error; userErr != nil {
+			return userErr
+		}
+		return nil
+	})
+	if result != nil {
 		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", err)
+		fmt.Println("UpdateResume - Error in saving Resume Data to Database: ", result)
 		return
 	}
 
 	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
-		"resumeFileName": application.ResumeFilename,
-		"resumeLink":     application.ResumeLink,
+		"resume_file_name":    file.Filename,
+		"resume_link":         application.ResumeLink,
+		"resume_update_count": user.ResumeUpdateCount,
 	})
 
 }

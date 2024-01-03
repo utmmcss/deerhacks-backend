@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"reflect"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
@@ -25,16 +24,18 @@ const (
 )
 
 func checkInsValidation(rawMsg json.RawMessage) bool {
-	var checkIns []QRCheckInContext
+	var checkIns map[QRCheckInContext]int
 	err := json.Unmarshal(rawMsg, &checkIns)
 	if err != nil {
 		fmt.Println("Error unmarshalling internal status:", err)
 		return false
 	}
-	for _, item := range checkIns {
-		switch item {
+	for key, val := range checkIns {
+		switch key {
 		case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
-			// Valid check in context
+			if val < 0 {
+				return false
+			}
 		default:
 			return false
 		}
@@ -152,16 +153,13 @@ func UpdateAdmin(c *gin.Context) {
 			currUser.InternalNotes = bodyData.InternalNotes
 			currUser.InternalStatus = bodyData.InternalStatus
 
-			if !reflect.DeepEqual(bodyData.CheckIns, currUser.CheckIns) {
-				if checkInsValidation(bodyData.CheckIns) {
-					currUser.CheckIns = bodyData.CheckIns
-				} else {
-					c.JSON(http.StatusBadRequest, gin.H{
-						"error": "Invalid CheckIns context",
-					})
-					return
-				}
-
+			if checkInsValidation(bodyData.CheckIns) {
+				currUser.CheckIns = bodyData.CheckIns
+			} else {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "Invalid CheckIns context",
+				})
+				return
 			}
 
 			// Save the updated user object to the database
@@ -184,6 +182,7 @@ func UpdateAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+
 // Get-user-list endpoint code
 func GetUserList(c *gin.Context) {
 
@@ -197,6 +196,7 @@ func GetUserList(c *gin.Context) {
 		})
 		return
 	}
+
 
 	// Check for the 'full' query parameter
 	full := c.DefaultQuery("full", "false")
@@ -264,4 +264,148 @@ func GetUserList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"users": usersResponse,
 	})
+
+}
+  func AdminQRCheckIn(c *gin.Context) {
+
+	userObj, _ := c.Get("user")
+
+	user := userObj.(models.User)
+
+	if user.Status != models.Admin && user.Status != models.Moderator && user.Status != models.Volunteer {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Admin, moderator, or volunteer only",
+		})
+		return
+	}
+
+	type QRCheckIn struct {
+		QRid    string           `json:"qrId"`
+		Context QRCheckInContext `json:"context"`
+	}
+	var bodyData QRCheckIn
+
+	bodyObj, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid Request Body",
+		})
+		return
+	}
+	defer c.Request.Body.Close()
+
+	if json.Unmarshal(bodyObj, &bodyData) != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid Request Body",
+		})
+		return
+	}
+
+	switch bodyData.Context {
+	case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
+		// Valid context, proceed
+	default:
+		// Invalid context, return an error
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid context",
+		})
+		return
+	}
+
+	//Get the user scanning in
+	var scannedUser models.User
+	initializers.DB.First(&scannedUser, "qr_code = ?", bodyData.QRid)
+	// If qr_code does not exist, return error
+	if scannedUser.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User not found",
+		})
+		return
+	}
+
+	if scannedUser.Status == models.Admin {
+		// Return success if scanning in admins
+		c.JSON(http.StatusOK, gin.H{
+			"success": true,
+			"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+		})
+		return
+	} else if bodyData.Context != REGISTRATION {
+		// Scanning in for food contexts
+		var checkIns map[QRCheckInContext]int
+		if scannedUser.CheckIns == nil {
+			checkIns = make(map[QRCheckInContext]int)
+		} else {
+			err := json.Unmarshal(scannedUser.CheckIns, &checkIns)
+			if err != nil {
+				fmt.Println("Error unmarshalling CheckIns:", err)
+				return
+			}
+		}
+
+		value, exists := checkIns[bodyData.Context]
+		if exists && ((scannedUser.Status == models.Moderator && value < 3) || (scannedUser.Status == models.Volunteer && value < 2)) {
+			checkIns[bodyData.Context] += 1
+		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended) {
+			checkIns[bodyData.Context] = 1
+		} else if exists {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("%s could not be checked in: Reached maximum number of check ins for this meal", scannedUser.Username),
+			})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("%s could not be checked in: User status is not valid for food context", scannedUser.Username),
+			})
+			return
+		}
+
+		//Marshal checkIns to save to database
+		checkInsData, err := json.Marshal(checkIns)
+		if err != nil {
+			fmt.Println("Error marshalling CheckIns:", err)
+			return
+		}
+		scannedUser.CheckIns = checkInsData
+	} else if user.Status == models.Admin || user.Status == models.Moderator {
+		// Scanning in for registration
+		if scannedUser.Status == models.Accepted {
+			scannedUser.Status = models.Attended
+		} else if scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer {
+			c.JSON(http.StatusOK, gin.H{
+				"success": true,
+				"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+			})
+			return
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"success": false,
+				"message": fmt.Sprintf("%s could not be checked in: Status is not valid for checkin", scannedUser.Username),
+			})
+			return
+		}
+
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"success": false,
+			"message": fmt.Sprintf("%s could not be checked in: Volunteers are not authorized to scan in for registration contexts", scannedUser.Username),
+		})
+		return
+	}
+
+	// Save scanned user to database
+	err = initializers.DB.Save(&scannedUser).Error
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to update user",
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),
+	})
+
 }
