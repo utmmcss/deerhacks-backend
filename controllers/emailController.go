@@ -80,7 +80,7 @@ func CleanupTableTask(interval time.Duration) {
 func getTemplateData(context string, user *models.User, entry *models.UserEmailContext) (string, string, string, error) {
 	if context == "signup" {
 
-		subject := "Verify your email for DeerHacks dashboard access"
+		subject := "[Action Required] Verify email to access DeerHacks dashboard"
 
 		first_name := user.FirstName
 
@@ -90,17 +90,25 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 
 		url := "https://deerhacks.ca/verify?code=" + entry.Token
 
-		buttonHTMLTemplate := `<a href="%s" style="background-color: #007bff; color: white; padding: 10px 20px; text-align: center; text-decoration: none; display: inline-block; border-radius: 5px; font-size: 16px;">Verify Email</a>`
+		buttonHTMLTemplate := `<a href="%s" style="background-color: white; color: #181818; padding: 1rem 2rem; font-weight: 600; text-align: center; text-decoration: none; border-radius: 0.5rem; margin: auto;">Verify Email</a>`
 
 		buttonToURL := fmt.Sprintf(buttonHTMLTemplate, url)
 
-		formattedStringHTML := fmt.Sprintf("Deer %s,<br><br>"+
-			"Thanks for creating an account with us at DeerHacks!<br><br>"+
-			"Please click the button below or this link directly: %s to verify your email. The link will expire within 24 hours of receiving this email.<br><br>"+
-			"%s<br><br>"+ // Using the button HTML here
-			"Happy Hacking,<br><br>"+
-			"DeerHacks Team 🦌",
-			first_name, url, buttonToURL)
+		formattedStringHTML := fmt.Sprintf(`
+			<div style="background: #212121; padding: 3rem 1rem 1rem; box-sizing: border-box;">
+				<div style="background: #181818; color: white; width: 100%%; max-width: 500px; margin: auto; padding: 1rem; border-radius: 1rem; box-sizing: border-box;">
+					<img src="https://raw.githubusercontent.com/utmmcss/deerhacks/main/public/backgrounds/collage_close.jpg" alt="DeerHacks Banner" style="width: 100%%; height: auto;">
+					<h1 style="color: white;">Deer %s,</h1>
+					<h2 style="color: white;">Thanks for creating an account with us at DeerHacks!</h2>
+					<p style="color: white;">Please click the button below or this link directly: <a href="%s" style="color: white;">%s</a> to verify your email. The link will expire within 24 hours of receiving this email.</p>
+					<div style="display: grid; padding: 3rem 0; box-sizing: border-box;">%s</div>
+					<p style="color: white;">Happy Hacking,<br>The DeerHacks Team 🦌</p>
+				</div>
+				<div style="color: white; width: 100%%; max-width: 500px; margin: auto; padding-top: 1rem; box-sizing: border-box;">
+					<p style="color: white;">✨ by <a href="https://github.com/anthonytedja" style="color: white;">Anthony Tedja</a> & <a href="https://github.com/Multivalence" style="color: white;">Shiva Mulwani</a></p>
+				</div>
+			</div>`,
+			first_name, url, url, buttonToURL)
 
 		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
 			"Thanks for creating an account with us at DeerHacks!\n\n"+
