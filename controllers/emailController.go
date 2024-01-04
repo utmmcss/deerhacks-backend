@@ -238,7 +238,7 @@ func VerifyEmail(c *gin.Context) {
 
 	if matchingEntry.ID == 0 {
 		fmt.Println("VerifyEmail - Could not find token given in body")
-		c.JSON(http.StatusBadRequest, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"status":  "invalid",
 			"context": "invalid",
 		})
@@ -258,7 +258,7 @@ func VerifyEmail(c *gin.Context) {
 
 	if has_time_passed {
 		fmt.Println("VerifyEmail - Token expired")
-		c.JSON(http.StatusGone, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"status":  "expired",
 			"context": matchingEntry.Context,
 		})
