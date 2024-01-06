@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
@@ -148,6 +149,7 @@ func UpdateAdmin(c *gin.Context) {
 				return
 			} else {
 				currUser.Status = bodyData.Status
+				discord.UpdateGuildUserRole(&user, false)
 			}
 
 			currUser.InternalNotes = bodyData.InternalNotes
@@ -289,6 +291,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		// Scanning in for registration
 		if scannedUser.Status == models.Accepted {
 			scannedUser.Status = models.Attended
+			discord.UpdateGuildUserRole(&scannedUser, false)
 		} else if scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
