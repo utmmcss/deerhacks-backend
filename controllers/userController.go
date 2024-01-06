@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
@@ -115,6 +116,7 @@ func UpdateUser(c *gin.Context) {
 
 		if user.Status == models.Registering {
 			user.Status = models.Pending
+			discord.UpdateGuildUserRole(&user, false)
 		}
 		isUserChanged = true
 	}

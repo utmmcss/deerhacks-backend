@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,35 +13,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
-
-// TODO test when bot is online
-func AddToDiscord(user *models.User) bool {
-	baseURL := "https://discord.com/api/v10/guilds/" + os.Getenv("GUILD_ID") + "/members/" + user.DiscordId
-
-	formData := url.Values{}
-	formData.Set("access_token", user.AuthToken)
-
-	req, err := http.NewRequest("PUT", baseURL, bytes.NewBufferString(formData.Encode()))
-	if err != nil {
-		fmt.Errorf("error forming request (usersController.AddToDiscord): %s", err)
-		return false
-	}
-
-	req.Header.Set("Authorization", os.Getenv("BOT_TOKEN"))
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fmt.Errorf("failed to add user to DeerHacks server: %s", err)
-		return false
-	}
-	defer resp.Body.Close()
-
-	return resp.StatusCode == 201
-
-}
 
 func FetchDiscordDetails(code string) (*models.DiscordDetails, error) {
 	urlStr := "https://discord.com/api/v10/oauth2/token"
@@ -205,7 +179,7 @@ func Login(c *gin.Context) {
 			return
 		}
 
-		AddToDiscord(&user)
+		discord.AddToDiscord(&user, false)
 
 	} else {
 		// Update tokens, expiry date, Avatar, and Username for existing user

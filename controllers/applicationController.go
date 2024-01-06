@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/copier"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
@@ -169,6 +170,7 @@ func UpdateApplication(c *gin.Context) {
 
 		// Save the updated user and application object to the database
 		user.Status = models.Applied
+		discord.UpdateGuildUserRole(&user, false)
 		initializers.DB.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Save(&user).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{

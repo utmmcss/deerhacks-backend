@@ -10,6 +10,7 @@ import (
 	brevo "github.com/getbrevo/brevo-go/lib"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/helpers"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
@@ -280,6 +281,7 @@ func VerifyEmail(c *gin.Context) {
 	}
 
 	user.Status = models.Status(matchingEntry.StatusChange)
+	discord.UpdateGuildUserRole(&user, false)
 	err = initializers.DB.Save(&user).Error
 
 	if err != nil {
