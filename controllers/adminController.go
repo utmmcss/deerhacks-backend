@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/helpers"
@@ -182,7 +184,6 @@ func UpdateAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-
 // Get-user-list endpoint code
 func GetUserList(c *gin.Context) {
 
@@ -197,9 +198,17 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
-
 	// Check for the 'full' query parameter
 	full := c.DefaultQuery("full", "false")
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize := 25
+
+	offset := (page - 1) * pageSize // Calculate the offset for the query
+	// Modify the database query to apply pagination
+	var totalUsers int64
+	initializers.DB.Model(&models.User{}).Count(&totalUsers) // Get the total count of users
 
 	// Create a slice to hold the response for each user
 	var usersResponse []map[string]interface{}
@@ -214,9 +223,13 @@ func GetUserList(c *gin.Context) {
 
 		var userApplications []UserApplication
 		// Perform a join with the application table and select all fields
+		// Add LIMIT and OFFSET to the query
 		initializers.DB.Table("users").
 			Select("users.*, applications.*").
 			Joins("left join applications on applications.discord_id = users.discord_id").
+			Order("users.id").
+			Limit(pageSize).
+			Offset(offset).
 			Scan(&userApplications)
 
 		// Iterate over the results to construct the response
@@ -238,12 +251,30 @@ func GetUserList(c *gin.Context) {
 			userResponse["is_draft"] = appResponse.IsDraft
 			userResponse["application"] = appResponse.Application
 
+			// Call the helper function to get resume details
+			resumeFilename, resumeLink, err := helpers.GetResumeDetails(&userApp.User, &userApp.Application)
+			if err != nil {
+				// Handle the error appropriately
+				fmt.Println("Error getting resume details: ", err)
+				continue // or you can handle it differently based on your application's needs
+			}
+
+			// Append the resume information to the user response
+			userResponse["resume_file_name"] = resumeFilename
+			userResponse["resume_link"] = resumeLink
+
+			// Add the response for the current user to the usersResponse slice
 			usersResponse = append(usersResponse, userResponse)
 		}
 	} else {
 		// If full=false, just return the basic user info without joining with the application table
 		var users []models.User
-		initializers.DB.Find(&users)
+
+		initializers.DB.Model(&models.User{}).
+			Order("id"). // Order by "id"
+			Limit(pageSize).
+			Offset(offset).
+			Find(&users)
 		for _, user := range users {
 			userResponse := make(map[string]interface{})
 			userResponse["first_name"] = user.FirstName
@@ -260,13 +291,24 @@ func GetUserList(c *gin.Context) {
 		}
 	}
 
-	// Send the response
+	// Calculate the total number of pages
+	totalPages := int(math.Ceil(float64(totalUsers) / float64(pageSize)))
+
+	// Prepare pagination metadata
+	pagination := gin.H{
+		"currentPage": page,
+		"totalPages":  totalPages,
+		"totalUsers":  totalUsers,
+	}
+
+	// Send the response with pagination metadata
 	c.JSON(http.StatusOK, gin.H{
-		"users": usersResponse,
+		"users":      usersResponse,
+		"pagination": pagination,
 	})
 
 }
-  func AdminQRCheckIn(c *gin.Context) {
+func AdminQRCheckIn(c *gin.Context) {
 
 	userObj, _ := c.Get("user")
 
