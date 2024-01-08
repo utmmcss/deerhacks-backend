@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/discord"
@@ -184,6 +186,162 @@ func UpdateAdmin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
+// Get-user-list endpoint code
+func GetUserList(c *gin.Context) {
+
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
+
+	// if the user is not an admin or moderator, then return nothing
+	if user.Status != models.Admin && user.Status != models.Moderator {
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Not allowed to view user list",
+		})
+		return
+	}
+
+	// Check 'status' query parameter
+	status := c.DefaultQuery("status", "")
+	validStatuses := map[string]bool{
+		"pending":     true,
+		"registering": true,
+		"applied":     true,
+		"selected":    true,
+		"accepted":    true,
+		"rejected":    true,
+		"attended":    true,
+		"admin":       true,
+		"moderator":   true,
+		"volunteer":   true,
+	}
+
+	//return error if status is not valid
+	if status != "" {
+		if _, ok := validStatuses[status]; !ok {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid status filter provided",
+			})
+			return
+		}
+	}
+
+	// Check for the 'full' query parameter
+	full := c.DefaultQuery("full", "false")
+
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize := 25
+
+	offset := (page - 1) * pageSize // Calculate the offset for the query
+
+	// Modify the database query to apply status filter if provided
+	query := initializers.DB.Model(&models.User{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
+	// Modify the database query to apply pagination
+	var totalUsers int64
+	initializers.DB.Model(&models.User{}).Count(&totalUsers) // Get the total count of users
+
+	// Create a slice to hold the response for each user
+	var usersResponse []map[string]interface{}
+
+	// if full == true in API call, join application and user table and return specific fields
+	if full == "true" {
+		// Define a struct to hold the joined data from the user and application tables
+		type UserApplication struct {
+			models.User
+			models.Application
+		}
+
+		var userApplications []UserApplication
+		// Perform a join with the application table and select all fields
+		// Add LIMIT and OFFSET to the query
+		query = query.Table("users").
+			Select("users.*, applications.*").
+			Joins("left join applications on applications.discord_id = users.discord_id").
+			Order("users.id").
+			Limit(pageSize).
+			Offset(offset)
+		query.Scan(&userApplications)
+
+		// Iterate over the results to construct the response
+		for _, userApp := range userApplications {
+			userResponse := make(map[string]interface{})
+
+			userResponse["first_name"] = userApp.FirstName
+			userResponse["last_name"] = userApp.LastName
+			userResponse["username"] = userApp.Username
+			userResponse["email"] = userApp.Email
+			userResponse["status"] = userApp.Status
+			userResponse["internal_status"] = userApp.InternalStatus
+			userResponse["internal_notes"] = userApp.InternalNotes
+			userResponse["check_ins"] = userApp.CheckIns
+			userResponse["qr_code"] = userApp.QRCode
+
+			appResponse := helpers.ToApplicationResponse(userApp.Application)
+
+			userResponse["is_draft"] = appResponse.IsDraft
+			userResponse["application"] = appResponse.Application
+
+			// Call the helper function to get resume details
+			resumeFilename, resumeLink, err := GetResumeDetails(&userApp.User, &userApp.Application)
+			if err != nil {
+				// Handle the error appropriately
+				fmt.Println("Error getting resume details: ", err)
+				continue // or you can handle it differently based on your application's needs
+			}
+
+			// Append the resume information to the user response
+			userResponse["resume_file_name"] = resumeFilename
+			userResponse["resume_link"] = resumeLink
+
+			// Add the response for the current user to the usersResponse slice
+			usersResponse = append(usersResponse, userResponse)
+		}
+	} else {
+		// If full=false, just return the basic user info without joining with the application table
+		var users []models.User
+
+		query.
+			Order("id").
+			Limit(pageSize).
+			Offset(offset).
+			Find(&users)
+		for _, user := range users {
+			userResponse := make(map[string]interface{})
+			userResponse["first_name"] = user.FirstName
+			userResponse["last_name"] = user.LastName
+			userResponse["username"] = user.Username
+			userResponse["email"] = user.Email
+			userResponse["status"] = user.Status
+			userResponse["internal_status"] = user.InternalStatus
+			userResponse["internal_notes"] = user.InternalNotes
+			userResponse["check_ins"] = user.CheckIns
+			userResponse["qr_code"] = user.QRCode
+
+			usersResponse = append(usersResponse, userResponse)
+		}
+	}
+
+	// Calculate the total number of pages
+	totalPages := int(math.Ceil(float64(totalUsers) / float64(pageSize)))
+
+	// Prepare pagination metadata
+	pagination := gin.H{
+		"currentPage": page,
+		"totalPages":  totalPages,
+		"totalUsers":  totalUsers,
+	}
+
+	// Send the response with pagination metadata
+	c.JSON(http.StatusOK, gin.H{
+		"users":      usersResponse,
+		"pagination": pagination,
+	})
+
+}
 func AdminQRCheckIn(c *gin.Context) {
 
 	userObj, _ := c.Get("user")

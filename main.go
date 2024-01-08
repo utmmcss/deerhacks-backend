@@ -55,5 +55,6 @@ func main() {
 	r.GET("/resume-get", middleware.RequireAuth, controllers.GetResume)
 	r.POST("/resume-update", middleware.RequireAuth, middleware.ResumeUpdateRateLimit, controllers.UpdateResume)
 
+	r.GET("/user-list", middleware.RequireAuth, controllers.GetUserList)
 	r.Run()
 }

@@ -61,6 +61,53 @@ func getPresignedURL(svc *s3.S3, filepath string, filename string) (string, erro
 
 }
 
+func GetResumeDetails(user *models.User, application *models.Application) (string, string, error) {
+	// If the application or resume link does not exist return empty response
+	if application.ID == 0 || application.ResumeLink == "" {
+		return "", "", nil
+	}
+
+	// Check expiry of resume link
+	passed, err := helpers.HasTimePassed(application.ResumeExpiry)
+	if err != nil {
+		return "", "", fmt.Errorf("error checking resume expiry: %w", err)
+	}
+	// If expiry has not arrived yet, return link and filename
+	if !passed {
+		return application.ResumeFilename, application.ResumeLink, nil
+	}
+	// If link is expired generate new presigned URL (check app_env)
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String("us-east-2"),
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("error creating AWS session: %w", err)
+	}
+
+	svc := s3.New(sess)
+
+	filePath, err := constructS3Key(user.DiscordId)
+	if err != nil {
+		return "", "", fmt.Errorf("error constructing S3 key: %w", err)
+	}
+
+	presignedURL, err := getPresignedURL(svc, filePath, application.ResumeFilename)
+	if err != nil {
+		return "", "", fmt.Errorf("error getting presigned URL: %w", err)
+	}
+
+	// Set ResumeLink to new url and update Expiry
+	application.ResumeLink = presignedURL
+	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
+
+	result := initializers.DB.Save(application)
+	if result.Error != nil {
+		return "", "", fmt.Errorf("error saving application to database: %w", result.Error)
+	}
+	// Return link and filename
+	return application.ResumeFilename, presignedURL, nil
+}
+
 func GetResume(c *gin.Context) {
 
 	userObj, _ := c.Get("user")
@@ -69,73 +116,19 @@ func GetResume(c *gin.Context) {
 	var application models.Application
 	initializers.DB.First(&application, "discord_id = ?", user.DiscordId)
 
-	// If the application or resume link does not exist return empty response
-	if application.ID == 0 || application.ResumeLink == "" {
+	filename, link, err := GetResumeDetails(&user, &application)
+
+	if err != nil {
+		c.AbortWithStatus(http.StatusInternalServerError)
+		fmt.Println("GetResume - ", err)
+		return
+	}
+
+	if filename == "" || link == "" {
 		c.JSON(http.StatusOK, gin.H{})
 		fmt.Println("GetResume - Application or Resume Link does not exist")
 		return
 	}
-
-	// Check expiry of resume link
-	passed, err := helpers.HasTimePassed(application.ResumeExpiry)
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("GetResume - Error in checking resume expiry: ", err)
-		return
-	}
-
-	// If expiry has not arrived yet, return link and filename along with resume update count
-	if !passed {
-		c.JSON(http.StatusOK, gin.H{
-			"resume_file_name":    application.ResumeFilename,
-			"resume_link":         application.ResumeLink,
-			"resume_update_count": user.ResumeUpdateCount,
-		})
-		return
-	}
-
-	// If link is expired generate new presigned URL (check app_env)
-
-	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("us-east-2"),
-	})
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("GetResume - Error in creating AWS Session: ", err)
-		return
-	}
-
-	svc := s3.New(sess)
-
-	s3key, err := constructS3Key(user.DiscordId)
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("GetResume - environment not defined for current appEnv", err)
-		return
-	}
-
-	presigned_url, err := getPresignedURL(svc, s3key, application.ResumeFilename)
-
-	if err != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("GetResume - Error in getting presigned url: ", err)
-		return
-	}
-
-	// Set ResumeLink to new url and update Expiry
-	application.ResumeLink = presigned_url
-	application.ResumeExpiry = time.Now().Add(7 * time.Hour).Format(time.RFC3339)
-	result := initializers.DB.Save(&application)
-
-	if result.Error != nil {
-		c.AbortWithStatus(http.StatusInternalServerError)
-		fmt.Println("GetResume - Error in saving URL to database: ", err)
-		return
-	}
-
-	// Return link and filename
 
 	c.JSON(http.StatusOK, gin.H{
 		"resume_file_name":    application.ResumeFilename,
