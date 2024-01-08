@@ -198,6 +198,31 @@ func GetUserList(c *gin.Context) {
 		return
 	}
 
+	// Check 'status' query parameter
+	status := c.DefaultQuery("status", "")
+	validStatuses := map[string]bool{
+		"pending":     true,
+		"registering": true,
+		"applied":     true,
+		"selected":    true,
+		"accepted":    true,
+		"rejected":    true,
+		"attended":    true,
+		"admin":       true,
+		"moderator":   true,
+		"volunteer":   true,
+	}
+
+	//return error if status is not valid
+	if status != "" {
+		if _, ok := validStatuses[status]; !ok {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid status filter provided",
+			})
+			return
+		}
+	}
+
 	// Check for the 'full' query parameter
 	full := c.DefaultQuery("full", "false")
 
@@ -206,6 +231,13 @@ func GetUserList(c *gin.Context) {
 	pageSize := 25
 
 	offset := (page - 1) * pageSize // Calculate the offset for the query
+
+	// Modify the database query to apply status filter if provided
+	query := initializers.DB.Model(&models.User{})
+	if status != "" {
+		query = query.Where("status = ?", status)
+	}
+
 	// Modify the database query to apply pagination
 	var totalUsers int64
 	initializers.DB.Model(&models.User{}).Count(&totalUsers) // Get the total count of users
@@ -224,13 +256,13 @@ func GetUserList(c *gin.Context) {
 		var userApplications []UserApplication
 		// Perform a join with the application table and select all fields
 		// Add LIMIT and OFFSET to the query
-		initializers.DB.Table("users").
+		query = query.Table("users").
 			Select("users.*, applications.*").
 			Joins("left join applications on applications.discord_id = users.discord_id").
 			Order("users.id").
 			Limit(pageSize).
-			Offset(offset).
-			Scan(&userApplications)
+			Offset(offset)
+		query.Scan(&userApplications)
 
 		// Iterate over the results to construct the response
 		for _, userApp := range userApplications {
@@ -270,8 +302,8 @@ func GetUserList(c *gin.Context) {
 		// If full=false, just return the basic user info without joining with the application table
 		var users []models.User
 
-		initializers.DB.Model(&models.User{}).
-			Order("id"). // Order by "id"
+		query.
+			Order("id").
 			Limit(pageSize).
 			Offset(offset).
 			Find(&users)

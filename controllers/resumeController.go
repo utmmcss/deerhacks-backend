@@ -78,7 +78,7 @@ func GetResumeDetails(user *models.User, application *models.Application) (strin
 	}
 	// If link is expired generate new presigned URL (check app_env)
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String(os.Getenv("AWS_REGION")),
+		Region: aws.String("us-east-2"),
 	})
 	if err != nil {
 		return "", "", fmt.Errorf("error creating AWS session: %w", err)
