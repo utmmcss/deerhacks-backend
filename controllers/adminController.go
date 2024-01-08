@@ -252,7 +252,7 @@ func GetUserList(c *gin.Context) {
 			userResponse["application"] = appResponse.Application
 
 			// Call the helper function to get resume details
-			resumeFilename, resumeLink, err := helpers.GetResumeDetails(&userApp.User, &userApp.Application)
+			resumeFilename, resumeLink, err := GetResumeDetails(&userApp.User, &userApp.Application)
 			if err != nil {
 				// Handle the error appropriately
 				fmt.Println("Error getting resume details: ", err)
