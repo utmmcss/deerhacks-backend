@@ -25,7 +25,7 @@ func CleanupTableTask(interval time.Duration) {
 			fmt.Println("Cleanup Email Task running", time.Now())
 
 			var entries []models.UserEmailContext
-			err := initializers.DB.Find(&entries).Error
+			err := initializers.DB.Unscoped().Find(&entries).Error
 
 			if err != nil {
 				fmt.Println("Cleanup Failed - Failed to find entries")
@@ -50,14 +50,14 @@ func CleanupTableTask(interval time.Duration) {
 					fmt.Println("Cleanup Failed - HasTimePassed returned unexpected result")
 					return
 				}
-
-				if has_time_passed {
+				// If expired or soft deleted, add to list
+				if has_time_passed || entry.DeletedAt.Valid {
 					entryIDs = append(entryIDs, entry.ID)
 				}
 
 			}
 
-			txerr := tx.Where("id IN (?)", entryIDs).Delete(&models.UserEmailContext{}).Error
+			txerr := tx.Where("id IN (?)", entryIDs).Unscoped().Delete(&models.UserEmailContext{}).Error
 
 			if txerr != nil {
 				fmt.Println("Cleanup Failed - Batch Delete failed")

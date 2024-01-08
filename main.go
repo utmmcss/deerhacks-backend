@@ -36,9 +36,9 @@ func main() {
 
 	r.ForwardedByClientIP = false
 	r.SetTrustedProxies(nil)
-	
+
 	// Start email cleanup task
-	go controllers.CleanupTableTask(24 * time.Hour)
+	go controllers.CleanupTableTask(12 * time.Hour)
 
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
