@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/discord"
@@ -49,18 +50,22 @@ func checkInsValidation(rawMsg json.RawMessage) bool {
 func UpdateAdmin(c *gin.Context) {
 
 	type UpdateBody struct {
-		FirstName      string          `json:"first_name,omitempty"`
-		LastName       string          `json:"last_name,omitempty"`
-		Email          string          `json:"email,omitempty"`
+		FirstName      *string          `json:"first_name,omitempty"`
+		LastName       *string          `json:"last_name,omitempty"`
+		Email          *string          `json:"email,omitempty"`
 		Status         models.Status   `json:"status,omitempty"`
-		InternalStatus string          `json:"internal_status,omitempty"`
-		InternalNotes  string          `json:"internal_notes,omitempty"`
+		InternalStatus *string          `json:"internal_status,omitempty"`
+		InternalNotes  *string          `json:"internal_notes,omitempty"`
 		CheckIns       json.RawMessage `json:"check_ins,omitempty"`
 	}
 
 	type UserBatch struct {
-		DiscordID string     `json:"discordID,omitempty"`
+		DiscordID string     `json:"discord_id,omitempty"`
 		Fields    UpdateBody `json:"fields,omitempty"`
+	}
+
+	type UpdateAdminBody struct {
+		Users []UserBatch `json:"users,omitempty"`
 	}
 
 	userObj, _ := c.Get("user")
@@ -73,18 +78,10 @@ func UpdateAdmin(c *gin.Context) {
 		return
 	}
 
-	bodyObj, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "Invalid Request Body",
-		})
-		return
-	}
-	defer c.Request.Body.Close()
+	var bodyObj UpdateAdminBody
 
-	var userBatch []UserBatch
-
-	if json.Unmarshal(bodyObj, &userBatch) != nil {
+	// Bind JSON to bodyData
+	if err := c.Bind(&bodyObj); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "Invalid Request Body",
 		})
@@ -92,7 +89,7 @@ func UpdateAdmin(c *gin.Context) {
 	}
 
 	var currUser models.User
-	for _, u := range userBatch {
+	for _, u := range bodyObj.Users {
 		initializers.DB.First(&currUser, "discord_id = ?", u.DiscordID)
 		// If discord_id does not exist, return error
 		if currUser.ID == 0 {
@@ -103,12 +100,12 @@ func UpdateAdmin(c *gin.Context) {
 		}
 		if user.Status == models.Admin || (currUser.Status != models.Admin && currUser.Status != models.Moderator) {
 			bodyData := UpdateBody{
-				FirstName:      currUser.FirstName,
-				LastName:       currUser.LastName,
-				Email:          currUser.Email,
+				FirstName:      &currUser.FirstName,
+				LastName:       &currUser.LastName,
+				Email:          &currUser.Email,
 				Status:         currUser.Status,
-				InternalNotes:  currUser.InternalNotes,
-				InternalStatus: currUser.InternalStatus,
+				InternalNotes:  &currUser.InternalNotes,
+				InternalStatus: &currUser.InternalStatus,
 				CheckIns:       currUser.CheckIns,
 			}
 			if jsonData, err := json.Marshal(u.Fields); err == nil {
@@ -129,11 +126,11 @@ func UpdateAdmin(c *gin.Context) {
 				return
 			}
 			// Update the user object with the new information (if applicable)
-			currUser.FirstName = bodyData.FirstName
-			currUser.LastName = bodyData.LastName
+			currUser.FirstName = *bodyData.FirstName
+			currUser.LastName = *bodyData.LastName
 
-			if bodyData.Email != currUser.Email {
-				email, err := helpers.GetValidEmail(bodyData.Email)
+			if *bodyData.Email != currUser.Email {
+				email, err := helpers.GetValidEmail(*bodyData.Email)
 				if err != nil {
 					c.JSON(http.StatusBadRequest, gin.H{
 						"error": "Invalid Email Address",
@@ -143,10 +140,10 @@ func UpdateAdmin(c *gin.Context) {
 				currUser.Email = email
 			}
 
-			//Make sure moderators cannot update status to admin
-			if user.Status == models.Moderator && bodyData.Status == models.Admin {
+			//Make sure moderators cannot update status to admin or moderator
+			if user.Status == models.Moderator && (bodyData.Status == models.Admin || bodyData.Status == models.Moderator) {
 				c.JSON(http.StatusBadRequest, gin.H{
-					"error": "Moderators cannot update status to admin",
+					"error": "Moderators cannot update status to admin or moderator",
 				})
 				return
 			} else {
@@ -154,16 +151,18 @@ func UpdateAdmin(c *gin.Context) {
 				discord.UpdateGuildUserRole(&user, false)
 			}
 
-			currUser.InternalNotes = bodyData.InternalNotes
-			currUser.InternalStatus = bodyData.InternalStatus
+			currUser.InternalNotes = *bodyData.InternalNotes
+			currUser.InternalStatus = *bodyData.InternalStatus
 
-			if checkInsValidation(bodyData.CheckIns) {
-				currUser.CheckIns = bodyData.CheckIns
-			} else {
-				c.JSON(http.StatusBadRequest, gin.H{
-					"error": "Invalid CheckIns context",
-				})
-				return
+			if bodyData.CheckIns != nil {
+				if checkInsValidation(bodyData.CheckIns) {
+					currUser.CheckIns = bodyData.CheckIns
+				} else {
+					c.JSON(http.StatusBadRequest, gin.H{
+						"error": "Invalid CheckIns context",
+					})
+					return
+				}
 			}
 
 			// Save the updated user object to the database
@@ -201,7 +200,10 @@ func GetUserList(c *gin.Context) {
 	}
 
 	// Check 'status' query parameter
-	status := c.DefaultQuery("status", "")
+	statuses := []string{}
+	if c.DefaultQuery("statuses", "") != "" {
+		statuses = strings.Split(c.DefaultQuery("statuses", ""), ",")
+	}
 	validStatuses := map[string]bool{
 		"pending":     true,
 		"registering": true,
@@ -216,10 +218,10 @@ func GetUserList(c *gin.Context) {
 	}
 
 	//return error if status is not valid
-	if status != "" {
+	for _, status := range statuses {
 		if _, ok := validStatuses[status]; !ok {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid status filter provided",
+				"error": "Invalid status filter provided", 
 			})
 			return
 		}
@@ -229,20 +231,20 @@ func GetUserList(c *gin.Context) {
 	full := c.DefaultQuery("full", "false")
 
 	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1")) 
 	pageSize := 25
 
 	offset := (page - 1) * pageSize // Calculate the offset for the query
 
 	// Modify the database query to apply status filter if provided
 	query := initializers.DB.Model(&models.User{})
-	if status != "" {
-		query = query.Where("status = ?", status)
+	if len(statuses) > 0 {
+		query = query.Where("status IN (?)", statuses)
 	}
 
 	// Modify the database query to apply pagination
 	var totalUsers int64
-	initializers.DB.Model(&models.User{}).Count(&totalUsers) // Get the total count of users
+	query.Count(&totalUsers) // Get the total count of users
 
 	// Create a slice to hold the response for each user
 	var usersResponse []map[string]interface{}
@@ -270,6 +272,7 @@ func GetUserList(c *gin.Context) {
 		for _, userApp := range userApplications {
 			userResponse := make(map[string]interface{})
 
+			userResponse["discord_id"] = userApp.User.DiscordId
 			userResponse["first_name"] = userApp.FirstName
 			userResponse["last_name"] = userApp.LastName
 			userResponse["username"] = userApp.Username
@@ -279,6 +282,12 @@ func GetUserList(c *gin.Context) {
 			userResponse["internal_notes"] = userApp.InternalNotes
 			userResponse["check_ins"] = userApp.CheckIns
 			userResponse["qr_code"] = userApp.QRCode
+
+			// Users without applications
+			if (userApp.Application.Model.ID == 0) {
+				usersResponse = append(usersResponse, userResponse)
+				continue
+			}
 
 			appResponse := helpers.ToApplicationResponse(userApp.Application)
 
@@ -311,6 +320,7 @@ func GetUserList(c *gin.Context) {
 			Find(&users)
 		for _, user := range users {
 			userResponse := make(map[string]interface{})
+			userResponse["discord_id"] = user.DiscordId
 			userResponse["first_name"] = user.FirstName
 			userResponse["last_name"] = user.LastName
 			userResponse["username"] = user.Username
@@ -328,11 +338,11 @@ func GetUserList(c *gin.Context) {
 	// Calculate the total number of pages
 	totalPages := int(math.Ceil(float64(totalUsers) / float64(pageSize)))
 
-	// Prepare pagination metadata
+	// Prepare pagination metadata 
 	pagination := gin.H{
-		"currentPage": page,
-		"totalPages":  totalPages,
-		"totalUsers":  totalUsers,
+		"current_page": page,
+		"total_pages":  totalPages,
+		"total_users":  totalUsers,
 	}
 
 	// Send the response with pagination metadata
