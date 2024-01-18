@@ -122,7 +122,46 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 		return subject, formattedStringHTML, formattedStringTEXT, nil
 
 	} else if context == "rsvp" {
-		return "", "", "", nil
+
+		subject := "[Action Required] RSVP For DeerHacks"
+
+		first_name := user.FirstName
+
+		if first_name == "" {
+			first_name = user.Username
+		}
+
+		url := "https://deerhacks.ca/verify?code=" + entry.Token
+
+		buttonHTMLTemplate := `<a href="%s" style="background-color: white; color: #181818; padding: 1rem 2rem; font-weight: 600; text-align: center; text-decoration: none; border-radius: 0.5rem; margin: auto;">RSVP</a>`
+
+		buttonToURL := fmt.Sprintf(buttonHTMLTemplate, url)
+
+		formattedStringHTML := fmt.Sprintf(`
+			<div style="background: #212121; padding: 3rem 1rem 1rem; box-sizing: border-box;">
+				<div style="background: #181818; color: white; width: 100%%; max-width: 500px; margin: auto; padding: 1rem; border-radius: 1rem; box-sizing: border-box;">
+					<img src="https://raw.githubusercontent.com/utmmcss/deerhacks/main/public/backgrounds/collage_close.jpg" alt="DeerHacks Banner" style="width: 100%%; height: auto;">
+					<h1 style="color: white;">Deer %s,</h1>
+					<h2 style="color: white;">Congratulations! You have been selected to participate in DeerHacks.</h2>
+					<p style="color: white;">Please click the button below or this link directly: <a href="%s" style="color: white;">%s</a> to RSVP. The link will expire within 5 days of receiving this email.</p>
+					<div style="display: grid; padding: 3rem 0; box-sizing: border-box;">%s</div>
+					<p style="color: white;">Happy Hacking,<br>The DeerHacks Team 🦌</p>
+				</div>
+				<div style="color: white; width: 100%%; max-width: 500px; margin: auto; padding-top: 1rem; box-sizing: border-box;">
+					<p style="color: white;">✨ by <a href="https://github.com/anthonytedja" style="color: white;">Anthony Tedja</a> & <a href="https://github.com/Multivalence" style="color: white;">Shiva Mulwani</a></p>
+				</div>
+			</div>`,
+			first_name, url, url, buttonToURL)
+
+		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
+			"Congratulations! You have been selected to participate in DeerHacks.\n\n"+
+			"Please click the link below to RSVP. The link will expire within 5 days of receiving this email.\n\n"+
+			"%s\n\n"+ // Using the button HTML here
+			"Happy Hacking,\n\n"+
+			"DeerHacks Team 🦌",
+			first_name, url)
+
+		return subject, formattedStringHTML, formattedStringTEXT, nil
 	} else {
 		return "", "", "", fmt.Errorf("invalid context given")
 	}
@@ -164,19 +203,20 @@ func SetupOutboundEmail(user *models.User, context string) {
 
 	// Status change configuration
 	var status_change = ""
+	expiry := time.Now().Add(24 * time.Hour)
 
 	if context == "signup" {
 		status_change = "registering"
 	} else if context == "rsvp" {
 		status_change = "accepted"
+		// 5 days
+		expiry = time.Now().Add(120 * time.Hour)
 	}
 
 	// Look up user to see if they have an existing request already (with same context)
 
 	var entry models.UserEmailContext
 	initializers.DB.First(&entry, "discord_id = ? AND context = ?", user.DiscordId, context)
-
-	expiry := time.Now().Add(24 * time.Hour)
 
 	// If user does not exist, create an entry for them
 

@@ -50,12 +50,12 @@ func checkInsValidation(rawMsg json.RawMessage) bool {
 func UpdateAdmin(c *gin.Context) {
 
 	type UpdateBody struct {
-		FirstName      *string          `json:"first_name,omitempty"`
-		LastName       *string          `json:"last_name,omitempty"`
-		Email          *string          `json:"email,omitempty"`
+		FirstName      *string         `json:"first_name,omitempty"`
+		LastName       *string         `json:"last_name,omitempty"`
+		Email          *string         `json:"email,omitempty"`
 		Status         models.Status   `json:"status,omitempty"`
-		InternalStatus *string          `json:"internal_status,omitempty"`
-		InternalNotes  *string          `json:"internal_notes,omitempty"`
+		InternalStatus *string         `json:"internal_status,omitempty"`
+		InternalNotes  *string         `json:"internal_notes,omitempty"`
 		CheckIns       json.RawMessage `json:"check_ins,omitempty"`
 	}
 
@@ -98,16 +98,19 @@ func UpdateAdmin(c *gin.Context) {
 			})
 			return
 		}
+
+		bodyData := UpdateBody{
+			FirstName:      &currUser.FirstName,
+			LastName:       &currUser.LastName,
+			Email:          &currUser.Email,
+			Status:         currUser.Status,
+			InternalNotes:  &currUser.InternalNotes,
+			InternalStatus: &currUser.InternalStatus,
+			CheckIns:       currUser.CheckIns,
+		}
+
 		if user.Status == models.Admin || (currUser.Status != models.Admin && currUser.Status != models.Moderator) {
-			bodyData := UpdateBody{
-				FirstName:      &currUser.FirstName,
-				LastName:       &currUser.LastName,
-				Email:          &currUser.Email,
-				Status:         currUser.Status,
-				InternalNotes:  &currUser.InternalNotes,
-				InternalStatus: &currUser.InternalStatus,
-				CheckIns:       currUser.CheckIns,
-			}
+
 			if jsonData, err := json.Marshal(u.Fields); err == nil {
 				if err := json.Unmarshal(jsonData, &bodyData); err != nil {
 					// Handle error from unmarshaling
@@ -178,6 +181,12 @@ func UpdateAdmin(c *gin.Context) {
 			})
 			return
 		}
+
+		// If status is changed to selected send an rsvp email
+		if bodyData.Status == models.Selected {
+			go SetupOutboundEmail(&currUser, "rsvp")
+		}
+
 		//Clears currUser in preperation for next user info
 		currUser = models.User{}
 	}
@@ -221,7 +230,7 @@ func GetUserList(c *gin.Context) {
 	for _, status := range statuses {
 		if _, ok := validStatuses[status]; !ok {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid status filter provided", 
+				"error": "Invalid status filter provided",
 			})
 			return
 		}
@@ -231,7 +240,7 @@ func GetUserList(c *gin.Context) {
 	full := c.DefaultQuery("full", "false")
 
 	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1")) 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 25
 
 	offset := (page - 1) * pageSize // Calculate the offset for the query
@@ -284,7 +293,7 @@ func GetUserList(c *gin.Context) {
 			userResponse["qr_code"] = userApp.QRCode
 
 			// Users without applications
-			if (userApp.Application.Model.ID == 0) {
+			if userApp.Application.Model.ID == 0 {
 				usersResponse = append(usersResponse, userResponse)
 				continue
 			}
@@ -338,7 +347,7 @@ func GetUserList(c *gin.Context) {
 	// Calculate the total number of pages
 	totalPages := int(math.Ceil(float64(totalUsers) / float64(pageSize)))
 
-	// Prepare pagination metadata 
+	// Prepare pagination metadata
 	pagination := gin.H{
 		"current_page": page,
 		"total_pages":  totalPages,
