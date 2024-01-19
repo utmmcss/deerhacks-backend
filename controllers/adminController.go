@@ -253,7 +253,7 @@ func GetUserList(c *gin.Context) {
 
 	// Modify the database query to apply pagination
 	var totalUsers int64
-	query.Debug().Count(&totalUsers) // Get the total count of users
+	query.Count(&totalUsers) // Get the total count of users
 
 	// Create a slice to hold the response for each user
 	var usersResponse []map[string]interface{}
