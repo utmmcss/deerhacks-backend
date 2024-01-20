@@ -148,7 +148,7 @@ func UpdateAdmin(c *gin.Context) {
 				return
 			} else {
 				currUser.Status = bodyData.Status
-				discord.EnqueueUser(&user, "update")
+				discord.EnqueueUser(&currUser, "update")
 			}
 
 			currUser.InternalNotes = *bodyData.InternalNotes

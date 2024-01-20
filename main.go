@@ -43,7 +43,7 @@ func main() {
 
 	// Start discord Join Queue & Update Role Queue tasks
 	go discord.JoinGuildTask(15 * time.Minute)
-	go discord.UpdateRoleTask(20 * time.Second)
+	go discord.UpdateRoleTask(10 * time.Minute)
 
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
