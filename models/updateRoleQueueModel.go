@@ -6,6 +6,9 @@ import (
 
 type UpdateRoleQueue struct {
 	gorm.Model
-	DiscordId string
-	Status    Status
+	DiscordId string `gorm:"unique"`
+}
+
+func (UpdateRoleQueue) TableName() string {
+	return "update_role_queue"
 }

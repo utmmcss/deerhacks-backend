@@ -281,7 +281,7 @@ func VerifyEmail(c *gin.Context) {
 	}
 
 	user.Status = models.Status(matchingEntry.StatusChange)
-	discord.UpdateGuildUserRole(&user, false)
+	discord.EnqueueUser(&user, "update")
 	err = initializers.DB.Save(&user).Error
 
 	if err != nil {

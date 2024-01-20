@@ -149,7 +149,7 @@ func AddToDiscord(user *models.User, retry bool) bool {
 	if resp.StatusCode == 201 {
 		return true
 	} else if resp.StatusCode == 204 {
-		UpdateGuildUserRole(user, false)
+		EnqueueUser(user, "update")
 		return true
 	} else if resp.StatusCode == 429 && retry == false {
 		var rateLimit RateLimitResponse

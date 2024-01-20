@@ -170,7 +170,7 @@ func UpdateApplication(c *gin.Context) {
 
 		// Save the updated user and application object to the database
 		user.Status = models.Applied
-		discord.UpdateGuildUserRole(&user, false)
+		discord.EnqueueUser(&user, "update")
 		initializers.DB.Transaction(func(tx *gorm.DB) error {
 			if err := tx.Save(&user).Error; err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{

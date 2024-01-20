@@ -50,12 +50,12 @@ func checkInsValidation(rawMsg json.RawMessage) bool {
 func UpdateAdmin(c *gin.Context) {
 
 	type UpdateBody struct {
-		FirstName      *string          `json:"first_name,omitempty"`
-		LastName       *string          `json:"last_name,omitempty"`
-		Email          *string          `json:"email,omitempty"`
+		FirstName      *string         `json:"first_name,omitempty"`
+		LastName       *string         `json:"last_name,omitempty"`
+		Email          *string         `json:"email,omitempty"`
 		Status         models.Status   `json:"status,omitempty"`
-		InternalStatus *string          `json:"internal_status,omitempty"`
-		InternalNotes  *string          `json:"internal_notes,omitempty"`
+		InternalStatus *string         `json:"internal_status,omitempty"`
+		InternalNotes  *string         `json:"internal_notes,omitempty"`
 		CheckIns       json.RawMessage `json:"check_ins,omitempty"`
 	}
 
@@ -148,7 +148,7 @@ func UpdateAdmin(c *gin.Context) {
 				return
 			} else {
 				currUser.Status = bodyData.Status
-				discord.UpdateGuildUserRole(&user, false)
+				discord.EnqueueUser(&user, "update")
 			}
 
 			currUser.InternalNotes = *bodyData.InternalNotes
@@ -221,7 +221,7 @@ func GetUserList(c *gin.Context) {
 	for _, status := range statuses {
 		if _, ok := validStatuses[status]; !ok {
 			c.JSON(http.StatusBadRequest, gin.H{
-				"error": "Invalid status filter provided", 
+				"error": "Invalid status filter provided",
 			})
 			return
 		}
@@ -231,7 +231,7 @@ func GetUserList(c *gin.Context) {
 	full := c.DefaultQuery("full", "false")
 
 	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1")) 
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := 25
 
 	offset := (page - 1) * pageSize // Calculate the offset for the query
@@ -284,7 +284,7 @@ func GetUserList(c *gin.Context) {
 			userResponse["qr_code"] = userApp.QRCode
 
 			// Users without applications
-			if (userApp.Application.Model.ID == 0) {
+			if userApp.Application.Model.ID == 0 {
 				usersResponse = append(usersResponse, userResponse)
 				continue
 			}
@@ -338,7 +338,7 @@ func GetUserList(c *gin.Context) {
 	// Calculate the total number of pages
 	totalPages := int(math.Ceil(float64(totalUsers) / float64(pageSize)))
 
-	// Prepare pagination metadata 
+	// Prepare pagination metadata
 	pagination := gin.H{
 		"current_page": page,
 		"total_pages":  totalPages,
@@ -459,7 +459,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		// Scanning in for registration
 		if scannedUser.Status == models.Accepted {
 			scannedUser.Status = models.Attended
-			discord.UpdateGuildUserRole(&scannedUser, false)
+			discord.EnqueueUser(&scannedUser, "update")
 		} else if scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
