@@ -116,7 +116,7 @@ func UpdateUser(c *gin.Context) {
 
 		if user.Status == models.Registering {
 			user.Status = models.Pending
-			discord.UpdateGuildUserRole(&user, false)
+			discord.EnqueueUser(&user, "update")
 		}
 		isUserChanged = true
 	}

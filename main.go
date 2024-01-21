@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/utmmcss/deerhacks-backend/controllers"
+	"github.com/utmmcss/deerhacks-backend/discord"
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/middleware"
 )
@@ -39,6 +40,10 @@ func main() {
 
 	// Start email cleanup task
 	go controllers.CleanupTableTask(12 * time.Hour)
+
+	// Start discord Join Queue & Update Role Queue tasks
+	go discord.JoinGuildTask(15 * time.Minute)
+	go discord.UpdateRoleTask(10 * time.Minute)
 
 	r.POST("/user-login", controllers.Login)
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)

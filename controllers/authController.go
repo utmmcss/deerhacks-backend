@@ -179,7 +179,7 @@ func Login(c *gin.Context) {
 			return
 		}
 
-		discord.AddToDiscord(&user, false)
+		discord.EnqueueUser(&user, "join")
 
 	} else {
 		// Update tokens, expiry date, Avatar, and Username for existing user
