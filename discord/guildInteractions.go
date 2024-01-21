@@ -16,7 +16,7 @@ type DiscordRole string
 
 const (
 	PendingDiscord     DiscordRole = "1087192865186254999" // Pending Email Verification
-	RegisteringDiscord DiscordRole = "295417774182891522"  // Email Verified, Registering for DeerHacks
+	RegisteringDiscord DiscordRole = "1087193230157819925" // Email Verified, Registering for DeerHacks
 	AppliedDiscord     DiscordRole = "1192983763995602964" // Application Submitted
 	SelectedDiscord    DiscordRole = "1192983889807933490" // Selected to Attend DeerHacks, Pending Confirmation
 	AcceptedDiscord    DiscordRole = "1192984014571704330" // Accepted to Attend DeerHacks
