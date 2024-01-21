@@ -442,7 +442,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		value, exists := checkIns[bodyData.Context]
 		if exists && ((scannedUser.Status == models.Moderator && value < 3) || (scannedUser.Status == models.Volunteer && value < 2)) {
 			checkIns[bodyData.Context] += 1
-		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended) {
+		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended || scannedUser.Status == models.Guest) {
 			checkIns[bodyData.Context] = 1
 		} else if exists {
 			c.JSON(http.StatusBadRequest, gin.H{
