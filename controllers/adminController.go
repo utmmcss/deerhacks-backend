@@ -184,7 +184,8 @@ func UpdateAdmin(c *gin.Context) {
 
 		// If status is changed to selected send an rsvp email
 		if bodyData.Status == models.Selected {
-			go SetupOutboundEmail(&currUser, "rsvp")
+			userCopy := currUser
+			go SetupOutboundEmail(&userCopy, "rsvp")
 		}
 
 		//Clears currUser in preperation for next user info
