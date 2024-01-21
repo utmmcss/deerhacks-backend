@@ -225,6 +225,7 @@ func GetUserList(c *gin.Context) {
 		"admin":       true,
 		"moderator":   true,
 		"volunteer":   true,
+		"guest":       true,
 	}
 
 	//return error if status is not valid
