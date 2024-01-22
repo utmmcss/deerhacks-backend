@@ -224,6 +224,7 @@ func GetUserList(c *gin.Context) {
 		"admin":       true,
 		"moderator":   true,
 		"volunteer":   true,
+		"guest":       true,
 	}
 
 	//return error if status is not valid
@@ -441,7 +442,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		value, exists := checkIns[bodyData.Context]
 		if exists && ((scannedUser.Status == models.Moderator && value < 3) || (scannedUser.Status == models.Volunteer && value < 2)) {
 			checkIns[bodyData.Context] += 1
-		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended) {
+		} else if !exists && (scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Attended || scannedUser.Status == models.Guest) {
 			checkIns[bodyData.Context] = 1
 		} else if exists {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -469,7 +470,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		if scannedUser.Status == models.Accepted {
 			scannedUser.Status = models.Attended
 			discord.EnqueueUser(&scannedUser, "update")
-		} else if scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer {
+		} else if scannedUser.Status == models.Attended || scannedUser.Status == models.Moderator || scannedUser.Status == models.Volunteer || scannedUser.Status == models.Guest {
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
 				"message": fmt.Sprintf("%s checked in successfully", scannedUser.Username),

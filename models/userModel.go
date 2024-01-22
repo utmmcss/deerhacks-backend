@@ -20,6 +20,7 @@ const (
 	Admin     Status = "admin"     // DeerHacks Tech Organizers
 	Moderator Status = "moderator" // DeerHacks Moderators
 	Volunteer Status = "volunteer" // DeerHacks Volunteers
+	Guest     Status = "guest"     //DeerHacks Guests
 )
 
 type User struct {
