@@ -240,11 +240,7 @@ func GetUserList(c *gin.Context) {
 	// Check for the 'full' query parameter
 	full := c.DefaultQuery("full", "false")
 
-	// Pagination parameters
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSize, _ := strconv.Atoi(c.DefaultQuery("pageSize", "25"))
-
-	offset := (page - 1) * pageSize // Calculate the offset for the query
+	// Calculate the offset for the query
 
 	// Modify the database query to apply status filter if provided
 	query := initializers.DB.Model(&models.User{})
@@ -256,6 +252,15 @@ func GetUserList(c *gin.Context) {
 	var totalUsers int64
 	query.Count(&totalUsers) // Get the total count of users
 
+	// Pagination parameters
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSizeVal := c.DefaultQuery("pageSize", "")
+	pageSize, pageSizeError := strconv.Atoi(pageSizeVal)
+
+	if pageSizeError != nil || pageSize <= 0 {
+		pageSize = int(totalUsers)
+	}
+	offset := (page - 1) * pageSize
 	// Create a slice to hold the response for each user
 	var usersResponse []map[string]interface{}
 
