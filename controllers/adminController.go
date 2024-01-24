@@ -254,10 +254,10 @@ func GetUserList(c *gin.Context) {
 
 	// Pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	pageSizeVal := c.DefaultQuery("pageSize", "")
-	pageSize, pageSizeError := strconv.Atoi(pageSizeVal)
+	allUsers := c.DefaultQuery("allUsers", "false")
+	pageSize := 25
 
-	if pageSizeError != nil || pageSize <= 0 {
+	if allUsers == "true"{
 		pageSize = int(totalUsers)
 	}
 	offset := (page - 1) * pageSize
