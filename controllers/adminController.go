@@ -254,7 +254,7 @@ func GetUserList(c *gin.Context) {
 
 	// Pagination parameters
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	allUsers := c.DefaultQuery("allUsers", "false")
+	allUsers := c.DefaultQuery("all_users", "false")
 	pageSize := 25
 
 	if allUsers == "true"{
