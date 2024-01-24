@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -86,7 +87,8 @@ func GetResumeDetails(user *models.User, application *models.Application) (strin
 
 	svc := s3.New(sess)
 
-	filePath, err := constructS3Key(user.DiscordId)
+	// filePath, err := constructS3Key(user.DiscordId)
+	filePath, err := constructS3Key(strings.Split(application.ResumeLink, "/")[4])
 	if err != nil {
 		return "", "", fmt.Errorf("error constructing S3 key: %w", err)
 	}
