@@ -214,6 +214,12 @@ func GetUserList(c *gin.Context) {
 		statuses = strings.Split(c.DefaultQuery("statuses", ""), ",")
 	}
 
+	// Check 'internal_statuses' query parameter
+	internal_statuses := []string{}
+	if c.DefaultQuery("internal_statuses", "") != "" {
+		internal_statuses = strings.Split(c.DefaultQuery("internal_statuses", ""), ",")
+	}
+
 	// Get search query parameter
 	search := c.DefaultQuery("search", "")
 
@@ -241,6 +247,16 @@ func GetUserList(c *gin.Context) {
 		}
 	}
 
+	// return error if internal_statuses is not valid
+	for _, status := range internal_statuses {
+		if _, ok := validStatuses[status]; !ok {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "Invalid internal status filter provided",
+			})
+			return
+		}
+	}
+
 	// Check for the 'full' query parameter
 	full := c.DefaultQuery("full", "false")
 
@@ -256,11 +272,16 @@ func GetUserList(c *gin.Context) {
 		query = query.Where("status IN (?)", statuses)
 	}
 
+	// Modify the database query to apply internal status filter if provided
+	if len(internal_statuses) > 0 {
+		query = query.Where("internal_status IN (?)", internal_statuses)
+	}
+
 	// Modify the database query to apply the search filter if provided
 	if search != "" {
 		query = query.Where(
-			"discord_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR username LIKE ? OR email LIKE ?",
-			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%",
+			"discord_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR username LIKE ? OR email LIKE ? OR internal_notes LIKE ?",
+			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%",
 		)
 	}
 
