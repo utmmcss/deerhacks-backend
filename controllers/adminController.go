@@ -213,6 +213,10 @@ func GetUserList(c *gin.Context) {
 	if c.DefaultQuery("statuses", "") != "" {
 		statuses = strings.Split(c.DefaultQuery("statuses", ""), ",")
 	}
+
+	// Get search query parameter
+	search := c.DefaultQuery("search", "")
+
 	validStatuses := map[string]bool{
 		"pending":     true,
 		"registering": true,
@@ -250,6 +254,14 @@ func GetUserList(c *gin.Context) {
 	query := initializers.DB.Model(&models.User{})
 	if len(statuses) > 0 {
 		query = query.Where("status IN (?)", statuses)
+	}
+
+	// Modify the database query to apply the search filter if provided
+	if search != "" {
+		query = query.Where(
+			"discord_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR username LIKE ? OR email LIKE ?",
+			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%",
+		)
 	}
 
 	// Modify the database query to apply pagination
