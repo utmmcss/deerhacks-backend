@@ -522,7 +522,7 @@ func AdminQRCheckIn(c *gin.Context) {
 		} else if scannedUser.Status == models.Attended {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"success": false,
-				"message": fmt.Sprintf("%s could not be checked in: Hacker has already signed in for registration", scannedUser.Username),
+				"message": fmt.Sprintf("%s could not be checked in: Hacker has already scanned in for registration", scannedUser.Username),
 			})
 			return
 		} else {
