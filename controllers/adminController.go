@@ -290,7 +290,7 @@ func GetUserList(c *gin.Context) {
 	// Modify the database query to apply the search filter if provided
 	if search != "" {
 		query = query.Where(
-			"discord_id ILIKE ? OR first_name ILIKE ? OR last_name ILIKE ? OR username ILIKE ? OR email ILIKE ? OR internal_notes ILIKE ?",
+			"users.discord_id ILIKE ? OR users.first_name ILIKE ? OR users.last_name ILIKE ? OR users.username ILIKE ? OR users.email ILIKE ? OR users.internal_notes ILIKE ?",
 			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%",
 		)
 	}
