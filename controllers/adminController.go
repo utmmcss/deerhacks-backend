@@ -247,9 +247,19 @@ func GetUserList(c *gin.Context) {
 		}
 	}
 
-	// return error if internal_statuses is not valid
+	// Form query for internal_statuses
+
+	var internalStatusConditions []string
+	var queryParams []interface{}
+
 	for _, status := range internal_statuses {
-		if _, ok := validStatuses[status]; !ok {
+
+		if status == "empty" {
+			internalStatusConditions = append(internalStatusConditions, "(internal_status IS NULL OR internal_status = '')")
+		} else if _, ok := validStatuses[status]; ok {
+			internalStatusConditions = append(internalStatusConditions, "internal_status = ?")
+			queryParams = append(queryParams, status)
+		} else {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "Invalid internal status filter provided",
 			})
@@ -273,14 +283,14 @@ func GetUserList(c *gin.Context) {
 	}
 
 	// Modify the database query to apply internal status filter if provided
-	if len(internal_statuses) > 0 {
-		query = query.Where("internal_status IN (?)", internal_statuses)
+	if len(internalStatusConditions) > 0 {
+		query = query.Where(strings.Join(internalStatusConditions, " OR "), queryParams...)
 	}
 
 	// Modify the database query to apply the search filter if provided
 	if search != "" {
 		query = query.Where(
-			"discord_id LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR username LIKE ? OR email LIKE ? OR internal_notes LIKE ?",
+			"discord_id ILIKE ? OR first_name ILIKE ? OR last_name ILIKE ? OR username ILIKE ? OR email ILIKE ? OR internal_notes ILIKE ?",
 			"%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%", "%"+search+"%",
 		)
 	}
