@@ -149,7 +149,7 @@ func UpdateAdmin(c *gin.Context) {
 					"error": "Moderators cannot update status to admin or moderator",
 				})
 				return
-			} else {
+			} else if u.Fields.Status != "" {
 				currUser.Status = bodyData.Status
 				discord.EnqueueUser(&currUser, "update")
 			}
@@ -183,7 +183,7 @@ func UpdateAdmin(c *gin.Context) {
 		}
 
 		// If status is changed to selected send an rsvp email
-		if bodyData.Status == models.Selected {
+		if u.Fields.Status == models.Selected {
 			SetupOutboundEmail(&currUser, "rsvp")
 		}
 
