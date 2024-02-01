@@ -3,8 +3,10 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	brevo "github.com/getbrevo/brevo-go/lib"
@@ -15,6 +17,8 @@ import (
 	"github.com/utmmcss/deerhacks-backend/initializers"
 	"github.com/utmmcss/deerhacks-backend/models"
 )
+
+var TEMPLATES []brevo.GetSmtpTemplateOverview
 
 func CleanupTableTask(interval time.Duration) {
 	ticker := time.NewTicker(interval)
@@ -78,18 +82,59 @@ func CleanupTableTask(interval time.Duration) {
 	}
 }
 
+func populateTemplates() {
+
+	cfg := brevo.NewConfiguration()
+	apiClient := brevo.NewAPIClient(cfg)
+
+	ctx := context.WithValue(context.Background(), brevo.ContextAPIKey, brevo.APIKey{
+		Key: os.Getenv("BREVO_API_KEY"),
+	})
+
+	obj, _, err := apiClient.TransactionalEmailsApi.GetSmtpTemplates(ctx, nil)
+
+	if err != nil {
+		fmt.Println("populateTemplates: Failed to retrieve Templates")
+		return
+	}
+
+	TEMPLATES = obj.Templates
+}
+
+func fetchTemplate(id int64, retry bool) (brevo.GetSmtpTemplateOverview, error) {
+
+	if len(TEMPLATES) == 0 {
+		if !retry {
+			populateTemplates()
+			template, err := fetchTemplate(id, true)
+			return template, err
+		} else {
+			return brevo.GetSmtpTemplateOverview{}, fmt.Errorf("No templates available")
+		}
+	}
+
+	for _, template := range TEMPLATES {
+		if template.Id == id {
+			return template, nil
+		}
+	}
+
+	return brevo.GetSmtpTemplateOverview{}, fmt.Errorf("template with id %d not found", id)
+}
+
 func getTemplateData(context string, user *models.User, entry *models.UserEmailContext) (string, string, string, error) {
+
+	first_name := user.FirstName
+
+	if first_name == "" {
+		first_name = user.Username
+	}
+
+	url := "https://deerhacks.ca/verify?code=" + entry.Token
+
 	if context == "signup" {
 
 		subject := "[Action Required] Verify email to access DeerHacks dashboard"
-
-		first_name := user.FirstName
-
-		if first_name == "" {
-			first_name = user.Username
-		}
-
-		url := "https://deerhacks.ca/verify?code=" + entry.Token
 
 		buttonHTMLTemplate := `<a href="%s" style="background-color: white; color: #181818; padding: 1rem 2rem; font-weight: 600; text-align: center; text-decoration: none; border-radius: 0.5rem; margin: auto;">Verify Email</a>`
 
@@ -123,45 +168,48 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 
 	} else if context == "rsvp" {
 
-		subject := "[Action Required] RSVP For DeerHacks"
+		template, err := fetchTemplate(1, false)
 
-		first_name := user.FirstName
-
-		if first_name == "" {
-			first_name = user.Username
+		if err != nil {
+			return "", "", "", fmt.Errorf("Failed to fetch template: %s", err)
 		}
 
-		url := "https://deerhacks.ca/verify?code=" + entry.Token
-
-		buttonHTMLTemplate := `<a href="%s" style="background-color: white; color: #181818; padding: 1rem 2rem; font-weight: 600; text-align: center; text-decoration: none; border-radius: 0.5rem; margin: auto;">RSVP</a>`
-
-		buttonToURL := fmt.Sprintf(buttonHTMLTemplate, url)
-
-		formattedStringHTML := fmt.Sprintf(`
-			<div style="background: #212121; padding: 3rem 1rem 1rem; box-sizing: border-box;">
-				<div style="background: #181818; color: white; width: 100%%; max-width: 500px; margin: auto; padding: 1rem; border-radius: 1rem; box-sizing: border-box;">
-					<img src="https://raw.githubusercontent.com/utmmcss/deerhacks/main/public/backgrounds/collage_close.jpg" alt="DeerHacks Banner" style="width: 100%%; height: auto;">
-					<h1 style="color: white;">Deer %s,</h1>
-					<h2 style="color: white;">Congratulations! You have been selected to participate in DeerHacks.</h2>
-					<p style="color: white;">Please click the button below or this link directly: <a href="%s" style="color: white;">%s</a> to RSVP. The link will expire within 5 days of receiving this email.</p>
-					<div style="display: grid; padding: 3rem 0; box-sizing: border-box;">%s</div>
-					<p style="color: white;">Happy Hacking,<br>The DeerHacks Team 🦌</p>
-				</div>
-				<div style="color: white; width: 100%%; max-width: 500px; margin: auto; padding-top: 1rem; box-sizing: border-box;">
-					<p style="color: white;">✨ by <a href="https://github.com/anthonytedja" style="color: white;">Anthony Tedja</a> & <a href="https://github.com/Multivalence" style="color: white;">Shiva Mulwani</a></p>
-				</div>
-			</div>`,
-			first_name, url, url, buttonToURL)
+		formattedStringHTML := strings.ReplaceAll(strings.ReplaceAll(html.UnescapeString(template.HtmlContent), "{first_name}", first_name), "{rsvp_link}", url)
 
 		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
 			"Congratulations! You have been selected to participate in DeerHacks.\n\n"+
 			"Please click the link below to RSVP. The link will expire within 5 days of receiving this email.\n\n"+
-			"%s\n\n"+ // Using the button HTML here
+			"%s\n\n"+
 			"Happy Hacking,\n\n"+
 			"DeerHacks Team 🦌",
 			first_name, url)
 
-		return subject, formattedStringHTML, formattedStringTEXT, nil
+		fmt.Println(template.Subject)
+		fmt.Println(formattedStringHTML)
+
+		return template.Subject, formattedStringHTML, formattedStringTEXT, nil
+	} else if context == "rejection" {
+
+		template, err := fetchTemplate(2, false)
+
+		if err != nil {
+			return "", "", "", fmt.Errorf("Failed to fetch template: %s", err)
+		}
+
+		formattedStringHTML := strings.ReplaceAll(html.UnescapeString(template.HtmlContent), "{first_name}", first_name)
+
+		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
+			"After careful review, we regret to inform you that we are unable to offer you an acceptance as a Hacker at this time. However, we encourage you to apply again next year and to continue seeking opportunities within our community.\n\n"+
+			"If you have any questions or concerns, do not hesitate to contact us at hello@deerhacks.ca.\n\n"+
+			"Best Regards,\n\n"+
+			"DeerHacks Team 🦌",
+			first_name)
+
+		fmt.Println(template.Subject)
+		fmt.Println(formattedStringHTML)
+
+		return template.Subject, formattedStringHTML, formattedStringTEXT, nil
+
 	} else {
 		return "", "", "", fmt.Errorf("invalid context given")
 	}
@@ -211,6 +259,8 @@ func SetupOutboundEmail(user *models.User, context string) {
 		status_change = "accepted"
 		// 5 days
 		expiry = time.Now().Add(120 * time.Hour)
+	} else if context == "rejection" {
+		expiry = time.Now()
 	}
 
 	// Look up user to see if they have an existing request already (with same context)
