@@ -174,7 +174,7 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 			return "", "", "", fmt.Errorf("Failed to fetch template: %s", err)
 		}
 
-		formattedStringHTML := strings.ReplaceAll(strings.ReplaceAll(html.UnescapeString(template.HtmlContent), "{first_name}", first_name), "{rsvp_link}", url)
+		formattedStringHTML := strings.ReplaceAll(strings.ReplaceAll(html.UnescapeString(template.HtmlContent), "{first_name}", first_name), "{rsvp_link}", strings.TrimPrefix(url, "https://"))
 
 		formattedStringTEXT := fmt.Sprintf("Deer %s,\n\n"+
 			"Congratulations! You have been selected to participate in DeerHacks.\n\n"+
