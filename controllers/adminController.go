@@ -187,6 +187,10 @@ func UpdateAdmin(c *gin.Context) {
 			SetupOutboundEmail(&currUser, "rsvp")
 		}
 
+		if u.Fields.Status == models.Rejected {
+			SetupOutboundEmail(&currUser, "rejection")
+		}
+
 		//Clears currUser in preperation for next user info
 		currUser = models.User{}
 	}
