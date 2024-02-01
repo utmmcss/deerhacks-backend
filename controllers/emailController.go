@@ -184,10 +184,8 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 			"DeerHacks Team 🦌",
 			first_name, url)
 
-		fmt.Println(template.Subject)
-		fmt.Println(formattedStringHTML)
-
 		return template.Subject, formattedStringHTML, formattedStringTEXT, nil
+
 	} else if context == "rejection" {
 
 		template, err := fetchTemplate(2, false)
@@ -204,9 +202,6 @@ func getTemplateData(context string, user *models.User, entry *models.UserEmailC
 			"Best Regards,\n\n"+
 			"DeerHacks Team 🦌",
 			first_name)
-
-		fmt.Println(template.Subject)
-		fmt.Println(formattedStringHTML)
 
 		return template.Subject, formattedStringHTML, formattedStringTEXT, nil
 
