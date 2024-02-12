@@ -25,6 +25,8 @@ const (
 	DAY_2_LUNCH     QRCheckInContext = "day_2_lunch"
 	DAY_2_DINNER    QRCheckInContext = "day_2_dinner"
 	DAY_3_BREAKFAST QRCheckInContext = "day_3_breakfast"
+	DRINK_BAR       QRCheckInContext = "drink_bar"
+	BUBBLE_TEA      QRCheckInContext = "bubble_tea"
 )
 
 func checkInsValidation(rawMsg json.RawMessage) bool {
@@ -36,7 +38,7 @@ func checkInsValidation(rawMsg json.RawMessage) bool {
 	}
 	for key, val := range checkIns {
 		switch key {
-		case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
+		case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST, DRINK_BAR, BUBBLE_TEA:
 			if val < 0 {
 				return false
 			}
@@ -445,7 +447,7 @@ func AdminQRCheckIn(c *gin.Context) {
 	}
 
 	switch bodyData.Context {
-	case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST:
+	case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST, DRINK_BAR, BUBBLE_TEA:
 		// Valid context, proceed
 	default:
 		// Invalid context, return an error
