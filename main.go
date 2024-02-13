@@ -49,6 +49,7 @@ func main() {
 	r.GET("/user-get", middleware.RequireAuth, controllers.GetUser)
 	r.POST("/user-update", middleware.RequireAuth, controllers.UpdateUser)
 	r.POST("/user-logout", middleware.RequireAuth, controllers.LogoutUser)
+	r.GET("/admin-user-get", middleware.RequireAuth, controllers.AdminUserGet)
 	r.POST("/email-verify", controllers.VerifyEmail)
 
 	r.POST("/qr-check-in", middleware.RequireAuth, controllers.AdminQRCheckIn)

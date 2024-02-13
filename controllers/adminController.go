@@ -49,6 +49,59 @@ func checkInsValidation(rawMsg json.RawMessage) bool {
 	return true
 }
 
+func AdminUserGet(c *gin.Context) {
+
+	userObj, _ := c.Get("user")
+	user := userObj.(models.User)
+
+	// Only allows admins and mods to call this endpoint
+	if user.Status != models.Admin && user.Status != models.Moderator {
+
+		c.JSON(http.StatusForbidden, gin.H{
+			"error": "Admins or Moderators only",
+		})
+		return
+	}
+
+	// Get qr code query parameter
+	qr_code := c.DefaultQuery("qrId", "")
+
+	if qr_code == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "No qr code given",
+		})
+		return
+	}
+
+	// Get user associated with qr code
+	var scannedUser models.User
+	initializers.DB.First(&scannedUser, "qr_code = ?", qr_code)
+
+	if scannedUser.ID == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "User not found",
+		})
+		return
+	}
+
+	// Return user data
+	responseMap := make(map[string]interface{})
+
+	responseMap["first_name"] = scannedUser.FirstName
+	responseMap["last_name"] = scannedUser.LastName
+	responseMap["username"] = scannedUser.Username
+	responseMap["email"] = scannedUser.Email
+	responseMap["discord_id"] = scannedUser.DiscordId
+	responseMap["status"] = scannedUser.Status
+	responseMap["qr_code"] = scannedUser.QRCode
+	responseMap["avatar"] = scannedUser.Avatar
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": responseMap,
+	})
+
+}
+
 func UpdateAdmin(c *gin.Context) {
 
 	type UpdateBody struct {
