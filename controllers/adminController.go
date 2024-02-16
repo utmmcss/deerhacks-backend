@@ -143,6 +143,8 @@ func UpdateAdmin(c *gin.Context) {
 		return
 	}
 
+	fmt.Println("Received request for admin-user-update: ", bodyObj)
+
 	var currUser models.User
 	for _, u := range bodyObj.Users {
 		initializers.DB.First(&currUser, "discord_id = ?", u.DiscordID)
@@ -498,6 +500,8 @@ func AdminQRCheckIn(c *gin.Context) {
 		})
 		return
 	}
+
+	fmt.Println("Received request for qr check in: ", bodyData)
 
 	switch bodyData.Context {
 	case REGISTRATION, DAY_1_DINNER, DAY_2_BREAKFAST, DAY_2_LUNCH, DAY_2_DINNER, DAY_3_BREAKFAST, DRINK_BAR, BUBBLE_TEA:
