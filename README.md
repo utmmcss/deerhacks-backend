@@ -31,7 +31,7 @@
 First, run the development server:
 
 ```bash
-go  run  main.go
+go run main.go
 ```
 
 Send API requests to [http://localhost:8000](http://localhost:8000) (assuming port specified in .env file is 8000) with tools like Postman
