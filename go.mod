@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/aws/aws-sdk-go v1.49.3
+	github.com/getbrevo/brevo-go v1.0.0
 	github.com/gin-gonic/gin v1.9.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/google/uuid v1.3.1
@@ -15,7 +16,6 @@ require (
 
 require (
 	github.com/antihax/optional v1.0.0 // indirect
-	github.com/getbrevo/brevo-go v1.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
@@ -55,6 +55,6 @@ require (
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sys v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
